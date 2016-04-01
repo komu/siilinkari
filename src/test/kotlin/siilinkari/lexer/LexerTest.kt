@@ -35,8 +35,8 @@ class LexerTest {
     fun operators() {
         assertTokens("+", Operator.Plus)
         assertTokens("-", Operator.Minus)
-        assertTokens("==", Operator.Equals)
-        assertTokens("!=", Operator.NotEquals)
+        assertTokens("==", Operator.EqualEqual)
+        assertTokens("!=", Operator.NotEqual)
         assertTokens("!", Operator.Not)
     }
 

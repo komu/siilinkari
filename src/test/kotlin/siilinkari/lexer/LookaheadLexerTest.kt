@@ -15,7 +15,7 @@ class LookaheadLexerTest {
         val lexer = LookaheadLexer("foo 123 bar")
 
         assertTrue(lexer.hasMore)
-        assertEquals(Identifier("foo"), lexer.peekToken())
+        assertEquals(Identifier("foo"), lexer.peekToken().token)
 
         assertTrue(lexer.hasMore)
         assertEquals(Identifier("foo"), lexer.readToken().token)
@@ -24,8 +24,8 @@ class LookaheadLexerTest {
         assertEquals(Literal(Value.Integer(123)), lexer.readToken().token)
 
         assertTrue(lexer.hasMore)
-        assertEquals(Identifier("bar"), lexer.peekToken())
-        assertEquals(Identifier("bar"), lexer.peekToken())
+        assertEquals(Identifier("bar"), lexer.peekToken().token)
+        assertEquals(Identifier("bar"), lexer.peekToken().token)
 
         assertTrue(lexer.hasMore)
         assertEquals(Identifier("bar"), lexer.readToken().token)

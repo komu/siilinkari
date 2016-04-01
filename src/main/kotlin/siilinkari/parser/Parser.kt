@@ -1,60 +1,95 @@
 package siilinkari.parser
 
 import siilinkari.ast.Expression
+import siilinkari.ast.Expression.Binary
 import siilinkari.ast.Statement
 import siilinkari.lexer.*
 import siilinkari.lexer.Token.*
 import siilinkari.lexer.Token.Punctuation.LeftBrace
 import java.util.*
 
-fun parseStatement(source: String): Statement =
-    parseComplete(source) { this.parseStatement() }
+/**
+ * Parse [code] as [Statement].
+ *
+ * @throws SyntaxErrorException if parsing fails
+ */
+fun parseStatement(code: String): Statement =
+    parseComplete(code) { it.parseStatement() }
 
-fun parseExpression(source: String): Expression =
-    parseComplete(source) { this.parseExpression() }
+/**
+ * Parse [code] as [Expression].
+ *
+ * @throws SyntaxErrorException if parsing fails
+ */
+fun parseExpression(code: String): Expression =
+    parseComplete(code) { it.parseExpression() }
 
-private fun <T> parseComplete(source: String, callback: Parser.() -> T): T {
-    val parser = Parser(source)
-    val result = parser.callback()
+/**
+ * Executes parser on code and verifies that it consumes all input.
+ *
+ * @throws SyntaxErrorException if the parser fails or if it did not consume all input
+ */
+private fun <T> parseComplete(code: String, callback: (Parser) -> T): T {
+    val parser = Parser(Lexer(code))
+    val result = callback(parser)
     parser.expectEnd()
     return result
 }
 
-class Parser private constructor(lexer: Lexer) {
+/**
+ * A simple recursive descent parser.
+ */
+private class Parser(lexer: Lexer) {
 
     private val lexer = LookaheadLexer(lexer)
 
-    constructor(source: String): this(Lexer(source)) {
-    }
-
-    fun parseStatement(): Statement = when (lexer.peekToken()) {
+    /**
+     * ```
+     * statement ::= if | while | var | statement-list | ident "=" expression | expression
+     * ```
+     */
+    fun parseStatement(): Statement = when (lexer.peekToken().token) {
         Keyword.If      -> parseIf()
         Keyword.While   -> parseWhile()
         Keyword.Var     -> parseVar()
         LeftBrace       -> parseStatementList()
-        else -> {
-            val exp = parseExpression()
-
-            val stmt = if (exp is Expression.Ref && lexer.nextTokenIs(Punctuation.Equal))
-                parseAssignTo(exp.name)
+        is Identifier   -> {
+            val (token, location) = lexer.readExpected<Identifier>()
+            val stmt = if (lexer.nextTokenIs(Punctuation.Equal))
+                parseAssignTo(token.name)
             else
-                Statement.Exp(exp)
-
+                Statement.Exp(Expression.Ref(token.name, location))
             lexer.expect(Punctuation.Semicolon)
             stmt
         }
+        else -> {
+            val exp = parseExpression()
+            lexer.expect(Punctuation.Semicolon)
+            Statement.Exp(exp)
+        }
     }
 
+    /**
+     * Parses an expression.
+     *
+     * Expression parsers are separated to different levels to handle precedence
+     * of operators correctly. The lower levels bind more tightly that the higher
+     * levels.
+     *
+     * ```
+     * expression ::= expression2 (("==" | "!=") expression2)*
+     * ```
+     */
     fun parseExpression(): Expression {
         var exp = parseExpression2()
 
         while (lexer.hasMore) {
-            val location = lexer.peekTokenInfo().location
+            val location = lexer.nextTokenLocation()
             when {
-                lexer.readNextIf(Operator.Equals) ->
-                    exp = Expression.Binary.Equals(exp, parseExpression2(), location)
-                lexer.readNextIf(Operator.NotEquals) ->
-                    exp = Expression.Binary.NotEquals(exp, parseExpression2(), location)
+                lexer.readNextIf(Operator.EqualEqual) ->
+                    exp = Binary.Equals(exp, parseExpression2(), location)
+                lexer.readNextIf(Operator.NotEqual) ->
+                    exp = Binary.NotEquals(exp, parseExpression2(), location)
                 else ->
                     return exp
             }
@@ -63,16 +98,21 @@ class Parser private constructor(lexer: Lexer) {
         return exp
     }
 
+    /**
+     * ```
+     * expression2 ::= expression3 (("+" | "-") expression3)*
+     * ```
+     */
     private fun parseExpression2(): Expression {
         var exp = parseExpression3()
 
         while (lexer.hasMore) {
-            val location = lexer.peekTokenInfo().location
+            val location = lexer.nextTokenLocation()
             when {
                 lexer.readNextIf(Operator.Plus) ->
-                    exp = Expression.Binary.Plus(exp, parseExpression3(), location)
+                    exp = Binary.Plus(exp, parseExpression3(), location)
                 lexer.readNextIf(Operator.Minus) ->
-                    exp = Expression.Binary.Minus(exp, parseExpression3(), location)
+                    exp = Binary.Minus(exp, parseExpression3(), location)
                 else ->
                     return exp
             }
@@ -81,8 +121,13 @@ class Parser private constructor(lexer: Lexer) {
         return exp
     }
 
+    /**
+     * ```
+     * expression3 ::= identifier | literal | not | "(" expression ")"
+     * ```
+     */
     private fun parseExpression3(): Expression {
-        val (token, location) = lexer.peekTokenInfo()
+        val (token, location) = lexer.peekToken()
 
         return when (token) {
             is Token.Identifier      -> parseIdentifier()
@@ -128,7 +173,7 @@ class Parser private constructor(lexer: Lexer) {
     }
 
     private fun parseStatementList(): Statement {
-        val location = lexer.peekTokenInfo().location
+        val location = lexer.nextTokenLocation()
         return inBraces {
             val statements = ArrayList<Statement>()
             while (!lexer.nextTokenIs(Punctuation.RightBrace))
@@ -181,7 +226,7 @@ class Parser private constructor(lexer: Lexer) {
 
     fun expectEnd() {
         if (lexer.hasMore) {
-            val (token, location) = lexer.peekTokenInfo()
+            val (token, location) = lexer.peekToken()
             fail(location, "expected end, but got $token")
         }
     }

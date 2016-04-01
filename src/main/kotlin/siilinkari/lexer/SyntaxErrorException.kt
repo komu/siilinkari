@@ -1,3 +1,9 @@
 package siilinkari.lexer
 
-class SyntaxErrorException(val errorMessage: String, val sourceLocation: SourceLocation): RuntimeException("$errorMessage\n${sourceLocation.toLongString()}")
+/**
+ * Exception thrown when there is a syntax error.
+ *
+ * Syntax errors can originate either in the lexer or the parser.
+ */
+class SyntaxErrorException(val errorMessage: String, val sourceLocation: SourceLocation) :
+        RuntimeException("$errorMessage\n${sourceLocation.toLongString()}")

@@ -5,6 +5,9 @@ import siilinkari.types.TypeCheckException
 import siilinkari.vm.Evaluator
 import java.util.*
 
+/**
+ * Implementation of Read-Eval-Print loop.
+ */
 fun main(args: Array<String>) {
 
     val scanner = Scanner(System.`in`)

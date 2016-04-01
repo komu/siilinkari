@@ -1,7 +1,7 @@
 package siilinkari.lexer
 
 /**
- * Token along its location in the original source code.
+ * [Token] along its [SourceLocation] in the original source code.
  */
 class TokenInfo<out T : Token>(val token: T, val location: SourceLocation) {
     operator fun component1() = token

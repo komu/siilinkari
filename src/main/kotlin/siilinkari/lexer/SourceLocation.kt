@@ -9,8 +9,14 @@ package siilinkari.lexer
  */
 data class SourceLocation(val file: String, val line: Int, val column: Int, val lineText: String) {
 
+    /**
+     * Returns single line representation of the location.
+     */
     override fun toString() = "[$file:$line:$column]"
 
+    /**
+     * Returns two line representation of the location.
+     */
     fun toLongString(): String {
         val prefix = "[$file:$line:$column] "
         val indent = " ".repeat(column - 1 + prefix.length)

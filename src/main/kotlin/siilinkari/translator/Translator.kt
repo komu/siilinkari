@@ -18,7 +18,7 @@ fun TypedExpression.translate(): CodeSegment {
     return translator.code
 }
 
-class Translator {
+private class Translator {
 
     val code = CodeSegment()
 

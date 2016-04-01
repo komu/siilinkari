@@ -11,21 +11,32 @@ import siilinkari.objects.Value
  * the lexer will return simply [Token.Keyword.If]. Other tokens contain information about
  * the value read: e.g. for source code `123`, the lexer will return [Token.Literal],
  * with its `value` set to integer `123`.
+ *
+ * @see TokenInfo
  */
 sealed class Token {
 
+    /**
+     * Identifier such as variable, method or class name.
+     */
     class Identifier(val name: String): Token() {
         override fun toString() = "[Identifier $name]"
         override fun equals(other: Any?) = other is Identifier && name == other.name
         override fun hashCode(): Int = name.hashCode()
     }
 
+    /**
+     * Literal value, e.g. `42`, `"foo"`, or `true`.
+     */
     class Literal(val value: Value) : Token() {
         override fun toString() = "[Literal $value]"
         override fun equals(other: Any?) = other is Literal && value == other.value
         override fun hashCode(): Int = value.hashCode()
     }
 
+    /**
+     * Reserved word in the language.
+     */
     sealed class Keyword(private val name: String) : Token() {
 
         override fun toString() = name
@@ -37,17 +48,23 @@ sealed class Token {
         object While : Keyword("while")
     }
 
+    /**
+     * Operators.
+     */
     sealed class Operator(private val name: String) : Token() {
 
         override fun toString() = name
 
         object Plus : Operator("+")
         object Minus : Operator("-")
-        object Equals : Operator("==")
-        object NotEquals : Operator("!=")
+        object EqualEqual : Operator("==")
+        object NotEqual : Operator("!=")
         object Not : Operator("!")
     }
 
+    /**
+     * General punctuation.
+     */
     sealed class Punctuation(private val name: String) : Token() {
 
         override fun toString() = "'$name'"

@@ -2,12 +2,30 @@ package siilinkari.lexer
 
 /**
  * Adapts [Lexer] to implement single token lookahead.
+ *
+ * Parsers generally need to peek one or more tokens ahead before making commitments
+ * on what branch to take. Our grammar is simple enough so that we can manage with
+ * single token lookahead. We could implement the lookahead either directly in [Lexer]
+ * or in our parser, but doing that would needlessly complicate the code there.
+ *
+ * @param lexer to wrap with lookahead
  */
 class LookaheadLexer(private val lexer: Lexer) {
 
+    /**
+     * Convenience constructor that creates the wrapped [Lexer] using given [source].
+     */
     constructor(source: String): this(Lexer(source)) {
     }
 
+    /**
+     * The lookahead token.
+     *
+     * If our caller wants to peek a token, we need to read it from [lexer], thus consuming it.
+     * However, we'll store it here so that we can pretend that it has not been consumed yet.
+     *
+     * If we are in sync with [lexer], then the lookahead is `null`,
+     */
     private var lookahead: TokenInfo<*>? = null
 
     /**
@@ -32,20 +50,23 @@ class LookaheadLexer(private val lexer: Lexer) {
     /**
      * Returns the next token without consuming it.
      */
-    fun peekToken(): Token =
-        peekTokenInfo().token
-
-    /**
-     * Returns the next token without consuming it.
-     */
-    fun peekTokenInfo(): TokenInfo<*> {
+    fun peekToken(): TokenInfo<*> {
         val lookahead = this.lookahead ?: lexer.readToken()
         this.lookahead = lookahead
         return lookahead
     }
 
+    /**
+     * Returns the location of the next token.
+     */
+    fun nextTokenLocation(): SourceLocation =
+        peekToken().location
+
+    /**
+     * Returns true if the next token is [token].
+     */
     fun nextTokenIs(token: Token): Boolean =
-        hasMore && peekToken() == token
+        hasMore && peekToken().token == token
 
     /**
      * If the next token is [token], consume it and return `true`. Otherwise don't
@@ -73,7 +94,7 @@ class LookaheadLexer(private val lexer: Lexer) {
     }
 
     /**
-     * If the next token is [T], consume it and return its location.
+     * If the next token is [T], consume it and return it.
      * Otherwise throw [SyntaxErrorException].
      */
     inline fun <reified T : Token> readExpected(): TokenInfo<T> {
