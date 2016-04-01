@@ -1,0 +1,34 @@
+buildscript {
+    ext.kotlinVersion = '1.0.1-2'
+    ext.dokkaVersion = '0.9.7'
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokkaVersion"
+    }
+}
+
+plugins {
+    id "com.github.johnrengelman.shadow" version "1.2.3"
+}
+
+apply plugin: 'java'
+apply plugin: 'kotlin'
+apply plugin: 'org.jetbrains.dokka'
+apply plugin: 'application'
+
+repositories {
+     jcenter()        
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    testCompile 'junit:junit:4.12'
+    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+}
+
+mainClassName = 'siilinkari.repl.ReplKt'
+assemble.dependsOn shadowJar
