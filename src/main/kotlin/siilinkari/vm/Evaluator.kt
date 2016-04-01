@@ -20,6 +20,15 @@ class Evaluator() {
     }
 
     fun evaluateStatement(code: String): Value? {
+        val translated = translate(code)
+
+        return evaluateSegment(translated)
+    }
+
+    fun dump(code: String): String =
+        translate(code).toString()
+
+    private fun translate(code: String): CodeSegment {
         val stmt = parseStatement(code)
         val typedStmt = typeChecker.typeCheck(stmt)
 
@@ -28,8 +37,7 @@ class Evaluator() {
         } else {
             typedStmt.translate()
         }
-
-        return evaluateSegment(translated)
+        return translated
     }
 
     fun evaluateExpression(code: String): Value {

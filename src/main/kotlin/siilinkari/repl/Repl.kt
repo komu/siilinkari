@@ -25,9 +25,13 @@ fun main(args: Array<String>) {
             line += ';'
 
         try {
-            val result = evaluator.evaluateStatement(line)
-            if (result != null)
-                println(result)
+            if (line.startsWith(":dump ")) {
+                println(evaluator.dump(line.substringAfter(":dump ")))
+            } else {
+                val result = evaluator.evaluateStatement(line)
+                if (result != null)
+                    println(result)
+            }
         } catch (e: SyntaxErrorException) {
             println("Syntax error: ${e.errorMessage}")
             println(e.sourceLocation.toLongString())
