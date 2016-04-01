@@ -3,10 +3,10 @@ package siilinkari.types
 import siilinkari.ast.Expression
 import siilinkari.ast.Statement
 import siilinkari.ast.TypedStatement
-import siilinkari.eval.UnboundVariableException
-import siilinkari.eval.VariableAlreadyBoundException
 import siilinkari.lexer.SourceLocation
 import siilinkari.objects.Value
+import siilinkari.vm.UnboundVariableException
+import siilinkari.vm.VariableAlreadyBoundException
 
 class TypeChecker(val environment: TypeEnvironment) {
 
@@ -24,11 +24,11 @@ private fun Expression.typeCheck(env: TypeEnvironment): TypedExpression = when (
     is Expression.Binary -> typeCheck(env)
 }
 
-private fun Expression.Binary.typeCheck(env: TypeEnvironment): TypedExpression.Binary = when (this) {
+private fun Expression.Binary.typeCheck(env: TypeEnvironment): TypedExpression = when (this) {
     is Expression.Binary.Plus      -> TypedExpression.Binary.Plus(lhs.typeCheckExpected(Type.Int, env), rhs.typeCheckExpected(Type.Int, env), Type.Int)
     is Expression.Binary.Minus     -> TypedExpression.Binary.Minus(lhs.typeCheckExpected(Type.Int, env), rhs.typeCheckExpected(Type.Int, env), Type.Int)
     is Expression.Binary.Equals    -> { val (l, r) = typeCheckMatching(env); TypedExpression.Binary.Equals(l, r) }
-    is Expression.Binary.NotEquals -> { val (l, r) = typeCheckMatching(env); TypedExpression.Binary.NotEquals(l, r) }
+    is Expression.Binary.NotEquals -> { val (l, r) = typeCheckMatching(env); TypedExpression.Not(TypedExpression.Binary.Equals(l, r)) }
 }
 
 private fun Expression.Binary.typeCheckMatching(env: TypeEnvironment): Pair<TypedExpression, TypedExpression> {

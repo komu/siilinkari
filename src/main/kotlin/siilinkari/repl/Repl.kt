@@ -1,15 +1,13 @@
 package siilinkari.repl
 
-import siilinkari.eval.EvaluationException
-import siilinkari.eval.Evaluator
 import siilinkari.lexer.SyntaxErrorException
 import siilinkari.types.TypeCheckException
+import siilinkari.vm.Evaluator
 import java.util.*
 
 fun main(args: Array<String>) {
 
     val scanner = Scanner(System.`in`)
-
     val evaluator = Evaluator()
 
     println("Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.")
@@ -20,21 +18,18 @@ fun main(args: Array<String>) {
         if (line == "") continue
         if (line == "exit") break
 
-        if (!line.endsWith(';'))
+        if (!line.endsWith(';') && !line.endsWith("}"))
             line += ';'
 
         try {
             val result = evaluator.evaluateStatement(line)
-            if (result != null && result != Unit)
+            if (result != null)
                 println(result)
         } catch (e: SyntaxErrorException) {
             println("Syntax error: ${e.errorMessage}")
             println(e.sourceLocation.toLongString())
         } catch (e: TypeCheckException) {
             println("Type checking failed: ${e.errorMessage}")
-            println(e.sourceLocation.toLongString())
-        } catch (e: EvaluationException) {
-            println("Evaluation failed: ${e.errorMessage}")
             println(e.sourceLocation.toLongString())
         } catch (e: Exception) {
             e.printStackTrace()

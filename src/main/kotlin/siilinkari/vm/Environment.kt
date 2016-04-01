@@ -1,4 +1,4 @@
-package siilinkari.eval
+package siilinkari.vm
 
 import siilinkari.objects.Value
 import java.util.*
@@ -9,8 +9,6 @@ class Environment {
 
     /**
      * Assigns a new value to existing variable.
-     *
-     * @throws UnboundVariableException if variable does not exist
      */
     operator fun set(name: String, value: Value) {
         if (name !in bindings) throw UnboundVariableException(name)
@@ -25,7 +23,7 @@ class Environment {
      */
     fun bind(name: String, value: Value) {
         if (name in bindings) throw VariableAlreadyBoundException(name)
-        
+
         bindings[name] = value
     }
 

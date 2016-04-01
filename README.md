@@ -54,13 +54,19 @@ The evaluator consists of the following pipeline:
   abstract syntax tree             siilinkari.ast.{Expression, Statement}
           |
           |
-          o--------- type checker  siilinkari.eval.{Type, TypeChecker, TypeEnvironment}
+          o--------- type checker  siilinkari.types.{Type, TypeChecker, TypeEnvironment}
           |
           v
     typed syntax tree              siilinkari.types.{TypedExpression, TypedStatement}
           |
           |
-          o--------- evaluator     siilinkari.eval.{Evaluator, Environment}
+          o--------- translator    siilinkari.translator.Translator
+          |
+          v
+    stack vm opcodes               siilinkari.vm.{OpCode, CodeSegment}
+          |
+          |
+          o--------- evaluator     siilinkari.vm.{Evaluator, Environment}
           |
           v
         values                     siilinkari.objects.Value

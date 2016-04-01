@@ -1,4 +1,4 @@
-package siilinkari.eval
+package siilinkari.vm
 
 import org.junit.Test
 import siilinkari.objects.value
@@ -58,4 +58,5 @@ class EnvironmentTest {
             env.bind("x", 1.value)
         }
     }
+
 }

@@ -1,7 +1,7 @@
 package siilinkari.types
 
-import siilinkari.eval.UnboundVariableException
-import siilinkari.eval.VariableAlreadyBoundException
+import siilinkari.vm.UnboundVariableException
+import siilinkari.vm.VariableAlreadyBoundException
 import java.util.*
 
 class TypeEnvironment {
