@@ -3,6 +3,7 @@ package siilinkari.repl
 import siilinkari.eval.EvaluationException
 import siilinkari.eval.Evaluator
 import siilinkari.lexer.SyntaxErrorException
+import siilinkari.types.TypeCheckException
 import java.util.*
 
 fun main(args: Array<String>) {
@@ -28,6 +29,9 @@ fun main(args: Array<String>) {
                 println(result)
         } catch (e: SyntaxErrorException) {
             println("Syntax error: ${e.errorMessage}")
+            println(e.sourceLocation.toLongString())
+        } catch (e: TypeCheckException) {
+            println("Type checking failed: ${e.errorMessage}")
             println(e.sourceLocation.toLongString())
         } catch (e: EvaluationException) {
             println("Evaluation failed: ${e.errorMessage}")

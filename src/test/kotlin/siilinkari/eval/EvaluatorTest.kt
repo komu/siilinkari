@@ -3,6 +3,7 @@ package siilinkari.eval
 import org.junit.Test
 import siilinkari.objects.Value
 import siilinkari.objects.value
+import siilinkari.types.TypeCheckException
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -20,7 +21,7 @@ class EvaluatorTest {
 
     @Test
     fun variableEvaluation() {
-        env.bind("x", 123.value)
+        evaluator.bind("x", 123.value)
 
         assertExpressionEvaluation("x", 123.value)
     }
@@ -34,7 +35,7 @@ class EvaluatorTest {
 
     @Test
     fun assignments() {
-        env.bind("x", 42.value)
+        evaluator.bind("x", 42.value)
 
         evaluateStatement("x = 123;")
 
@@ -43,14 +44,14 @@ class EvaluatorTest {
 
     @Test
     fun ifExpressions() {
-        env.bind("x", true.value)
-        env.bind("y", 42.value)
-        env.bind("r", 0.value)
+        evaluator.bind("x", true.value)
+        evaluator.bind("y", 42.value)
+        evaluator.bind("r", 0.value)
 
         evaluateStatement("if (x) r = 123; else r = y;")
         assertEquals(123.value, env["r"])
 
-        env["x"] = false.value
+        evaluator.environment["x"] = false.value
 
         evaluateStatement("if (x) r = 123; else r = y;")
         assertEquals(42.value, env["r"])
@@ -68,7 +69,7 @@ class EvaluatorTest {
 
     @Test
     fun ifWithoutElse() {
-        env.bind("r", 0.value)
+        evaluator.bind("r", 0.value)
 
         evaluateStatement("if (false) r = 1;")
         assertEquals(0.value, env["r"])
@@ -79,9 +80,9 @@ class EvaluatorTest {
 
     @Test
     fun whileLoop() {
-        env.bind("x", 5.value)
-        env.bind("a", 0.value)
-        env.bind("b", 0.value)
+        evaluator.bind("x", 5.value)
+        evaluator.bind("a", 0.value)
+        evaluator.bind("b", 0.value)
 
         evaluateStatement("""
             while (x != 0) {
@@ -104,30 +105,29 @@ class EvaluatorTest {
 
     @Test
     fun evaluationFailuresForCoercions() {
-        assertExpressionEvaluationFails("1 + \"foo\"")
-        assertExpressionEvaluationFails("!1")
-
+        assertExpressionTypeCheckFails("1 + \"foo\"")
+        assertExpressionTypeCheckFails("!1")
     }
 
     @Test
     fun evaluationFailsForUnboundVariables() {
-        assertExpressionEvaluationFails("x")
-        assertStatementEvaluationFails("x = 4;")
+        assertExpressionTypeCheckFails("x")
+        assertStatementTypeCheckFails("x = 4;")
     }
 
     @Test
     fun evaluationFailsForRebindingVariables() {
-        assertStatementEvaluationFails("{ var x = 4; var x = 4; }")
+        assertStatementTypeCheckFails("{ var x = 4; var x = 4; }")
     }
 
-    private fun assertExpressionEvaluationFails(s: String) {
-        assertFailsWith<EvaluationException> {
+    private fun assertExpressionTypeCheckFails(s: String) {
+        assertFailsWith<TypeCheckException> {
             evaluateExpression(s)
         }
     }
 
-    private fun assertStatementEvaluationFails(s: String) {
-        assertFailsWith<EvaluationException> {
+    private fun assertStatementTypeCheckFails(s: String) {
+        assertFailsWith<TypeCheckException> {
             evaluateStatement(s)
         }
     }

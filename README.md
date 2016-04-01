@@ -36,25 +36,34 @@ The evaluator consists of the following pipeline:
 
 ```
 
-   Representation            Important classes
-   --------------            -----------------
+   Representation    Stage        Important classes
+   --------------    -----        -----------------
 
-      source code            String
+      source code                  String
           |
-          o--- lexer         siilinkari.lexer.{Lexer,LookaheadLexer}
           |
-          v
-       tokens                siilinkari.lexer.Token
-          |
-          o--- parser        siilinkari.parser.Parser
+          o--------- lexer         siilinkari.lexer.{Lexer,LookaheadLexer}
           |
           v
-  abstract syntax tree       siilinkari.ast.{Expression, Statement}
+       tokens                      siilinkari.lexer.Token
           |
-          o--- evaluator     siilinkari.eval.{Evaluator, Environment}
+          |
+          o--------- parser        siilinkari.parser.Parser
           |
           v
-        values               siilinkari.objects.Value
+  abstract syntax tree             siilinkari.ast.{Expression, Statement}
+          |
+          |
+          o--------- type checker  siilinkari.eval.{Type, TypeChecker, TypeEnvironment}
+          |
+          v
+    typed syntax tree              siilinkari.types.{TypedExpression, TypedStatement}
+          |
+          |
+          o--------- evaluator     siilinkari.eval.{Evaluator, Environment}
+          |
+          v
+        values                     siilinkari.objects.Value
 
 ```
 
