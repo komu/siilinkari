@@ -26,6 +26,15 @@ Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.
 > if (x == 2 + 2) s = "It worked!";
 > s
 "It worked!"
+> :dump if (x == 2 + 2) s = "It worked!";
+0 Load x
+1 Push 2
+2 Push 2
+3 Add
+4 Equal
+5 JumpIfFalse [Label 8]
+6 Push "It worked!"
+7 Store s
 > exit
 Thank you for visiting Siilinkari, have a nice day!
 ```
