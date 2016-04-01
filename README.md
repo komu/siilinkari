@@ -60,3 +60,22 @@ The evaluator consists of the following pipeline:
 
 Start from the important classes and either work your way through the pipeline, or just concentrate
 on a single transformation pass.
+
+## Project ideas
+
+If you want to play around, here are some ideas to get started:
+
+- Add new `unless (x) { ... }` statement that works like `if (!x) { ... }`.
+- Convert `if`-statement to expression so you can say `var x = if (a) b else c;`.
+- Implement a pretty printer: it should take an AST and write it to output properly formatted.
+- Modify lexer and parser so that semicolons are not required at the end of statements.
+- Modify lexer and parser to support indentation based syntax.
+- Add AST -> AST rewrite step that does constant folding before evaluation starts.
+- Add support for higher order functions and lambdas.
+
+## Want more?
+
+If you want a taste of a bigger language, take a look at [Blunt](https://bitbucket.org/komu/blunt).
+It implements a large subset of ML/Haskell-like language (see e.g. [prelude.blunt](https://bitbucket.org/komu/blunt/src/f8a14979a743c4f06c85cffeee876111f2ac91ab/src/main/resources/prelude.blunt?at=master&fileviewer=file-view-default)
+and [river.blunt](https://bitbucket.org/komu/blunt/src/f8a14979a743c4f06c85cffeee876111f2ac91ab/src/main/resources/river.blunt?at=master&fileviewer=file-view-default)), but naturally the implementation is a lot
+more complex.
