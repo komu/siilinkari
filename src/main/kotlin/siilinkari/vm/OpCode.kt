@@ -11,6 +11,7 @@ sealed class OpCode {
     object Add : OpCode()
     object Subtract : OpCode()
     object Equal : OpCode()
+    object ConcatString : OpCode()
     object Pop : OpCode()
 
     class Push(val value: Value) : OpCode() {

@@ -43,10 +43,35 @@ private fun Expression.typeCheck(env: TypeEnvironment): TypedExpression = when (
 }
 
 private fun Expression.Binary.typeCheck(env: TypeEnvironment): TypedExpression = when (this) {
-    is Expression.Binary.Plus      -> TypedExpression.Binary.Plus(lhs.typeCheckExpected(Type.Int, env), rhs.typeCheckExpected(Type.Int, env), Type.Int)
-    is Expression.Binary.Minus     -> TypedExpression.Binary.Minus(lhs.typeCheckExpected(Type.Int, env), rhs.typeCheckExpected(Type.Int, env), Type.Int)
-    is Expression.Binary.Equals    -> { val (l, r) = typeCheckMatching(env); TypedExpression.Binary.Equals(l, r) }
-    is Expression.Binary.NotEquals -> { val (l, r) = typeCheckMatching(env); TypedExpression.Not(TypedExpression.Binary.Equals(l, r)) }
+    is Expression.Binary.Plus ->
+        typeCheck(env)
+    is Expression.Binary.Minus -> {
+        val typedLhs = lhs.typeCheckExpected(Type.Int, env)
+        val typedRhs = rhs.typeCheckExpected(Type.Int, env)
+        TypedExpression.Binary.Minus(typedLhs, typedRhs, Type.Int)
+    }
+    is Expression.Binary.Equals    -> {
+        val (l, r) = typeCheckMatching(env);
+        TypedExpression.Binary.Equals(l, r)
+    }
+    is Expression.Binary.NotEquals -> {
+        val (l, r) = typeCheckMatching(env);
+        TypedExpression.Not(TypedExpression.Binary.Equals(l, r))
+    }
+}
+
+private fun Expression.Binary.Plus.typeCheck(env: TypeEnvironment): TypedExpression {
+    val typedLhs = lhs.typeCheck(env)
+
+    return if (typedLhs.type == Type.String) {
+        val typedRhs = rhs.typeCheck(env)
+        TypedExpression.Binary.ConcatString(typedLhs, typedRhs)
+
+    } else {
+        val typedLhs2 = typedLhs.expectAssignableTo(Type.Int, lhs.location)
+        val typedRhs = rhs.typeCheckExpected(Type.Int, env)
+        TypedExpression.Binary.Plus(typedLhs2, typedRhs, Type.Int)
+    }
 }
 
 private fun Expression.Binary.typeCheckMatching(env: TypeEnvironment): Pair<TypedExpression, TypedExpression> {

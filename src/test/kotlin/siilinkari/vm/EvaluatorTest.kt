@@ -120,6 +120,13 @@ class EvaluatorTest {
         assertStatementTypeCheckFails("{ var x = 4; var x = 4; }")
     }
 
+    @Test
+    fun plusWithStringLiteralOnLeftSideIsStringConcatenation() {
+        assertExpressionEvaluation("\"foo \" + \"bar\"", "foo bar".value)
+        assertExpressionEvaluation("\"foo \" + 42", "foo 42".value)
+        assertExpressionEvaluation("\"foo \" + true", "foo true".value)
+    }
+
     private fun assertExpressionTypeCheckFails(s: String) {
         assertFailsWith<TypeCheckException> {
             evaluateExpression(s)

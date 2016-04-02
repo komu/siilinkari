@@ -55,12 +55,20 @@ class TypeCheckerTest {
         assertExpressionTypeCheckFails("1 + true")
         assertExpressionTypeCheckFails("true + 1")
         assertExpressionTypeCheckFails("true + true")
-        assertExpressionTypeCheckFails("\"foo\" + \"bar\"")
+        assertExpressionTypeCheckFails("1 + \"foo\"")
+        assertExpressionTypeCheckFails("true + \"foo\"")
 
         assertExpressionTypeCheckFails("1 - true")
         assertExpressionTypeCheckFails("true - 1")
         assertExpressionTypeCheckFails("true - true")
         assertExpressionTypeCheckFails("\"foo\" - \"bar\"")
+    }
+
+    @Test
+    fun plusWithStringLiteral() {
+        assertExpressionType(Type.String, "\"foo\" + \"bar\"")
+        assertExpressionType(Type.String, "\"foo\" + 42")
+        assertExpressionType(Type.String, "\"foo\" + true")
     }
 
     @Test

@@ -74,6 +74,7 @@ private class Translator {
                 code += OpCode.Jump(beforeLoop)
                 code += afterLoop
             }
+            else -> error("unknown statement: $this")
         }
     }
 
@@ -89,6 +90,8 @@ private class Translator {
             }
             is TypedExpression.Binary ->
                 emitCode()
+            else ->
+                error("unknown expression: $this")
         }
     }
 
@@ -96,9 +99,11 @@ private class Translator {
         lhs.emitCode()
         rhs.emitCode()
         when (this) {
-            is TypedExpression.Binary.Plus      -> code += OpCode.Add
-            is TypedExpression.Binary.Minus     -> code += OpCode.Subtract
-            is TypedExpression.Binary.Equals    -> code += OpCode.Equal
+            is TypedExpression.Binary.Plus         -> code += OpCode.Add
+            is TypedExpression.Binary.Minus        -> code += OpCode.Subtract
+            is TypedExpression.Binary.Equals       -> code += OpCode.Equal
+            is TypedExpression.Binary.ConcatString -> code += OpCode.ConcatString
+            else                                   -> error("unknown expression: $this")
         }
     }
 }

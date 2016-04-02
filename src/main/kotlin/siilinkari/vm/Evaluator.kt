@@ -80,6 +80,11 @@ class Evaluator() {
                     val lhs = stack.pop<Value>()
                     stack.push(Value.Bool(lhs == rhs))
                 }
+                OpCode.ConcatString -> {
+                    val rhs = stack.pop<Value>()
+                    val lhs = stack.pop<Value.String>()
+                    stack.push(lhs + rhs)
+                }
                 is OpCode.Push ->
                     stack.push(op.value)
                 is OpCode.Load ->
