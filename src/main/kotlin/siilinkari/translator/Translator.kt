@@ -1,31 +1,40 @@
 package siilinkari.translator
 
-import siilinkari.ast.TypedStatement
 import siilinkari.types.TypedExpression
+import siilinkari.types.TypedStatement
 import siilinkari.vm.CodeSegment
 import siilinkari.vm.Label
 import siilinkari.vm.OpCode
 
+/**
+ * Translates [TypedStatement] to [CodeSegment] containing [OpCode]s for vm to run.
+ */
 fun TypedStatement.translate(): CodeSegment {
     val translator = Translator()
     translator.apply { emitCode() }
-    return translator.code
+    return translator.code.build()
 }
 
+/**
+ * Translates [TypedExpression] to [CodeSegment] containing [OpCode]s for vm to run.
+ */
 fun TypedExpression.translate(): CodeSegment {
     val translator = Translator()
     translator.apply { emitCode() }
-    return translator.code
+    return translator.code.build()
 }
 
 private class Translator {
 
-    val code = CodeSegment()
+    val code = CodeSegment.Builder()
 
     fun TypedStatement.emitCode() {
         when (this) {
             is TypedStatement.Exp -> {
                 expression.emitCode()
+
+                // If we are evaluating an expression as a statement,
+                // we need to discard the result of the expression.
                 code += OpCode.Pop
             }
             is TypedStatement.StatementList ->
@@ -47,33 +56,39 @@ private class Translator {
                 if (alternative != null) {
                     val afterIf = Label()
                     code += OpCode.Jump(afterIf)
-                    falseBranch.address = code.endAddress
+                    code += falseBranch
                     alternative.emitCode()
-                    afterIf.address = code.endAddress
+                    code += afterIf
                 } else {
-                    falseBranch.address = code.endAddress
+                    code += falseBranch
                 }
             }
             is TypedStatement.While -> {
                 val beforeLoop = Label()
                 val afterLoop = Label()
 
-                beforeLoop.address = code.endAddress
+                code += beforeLoop
                 condition.emitCode()
                 code += OpCode.JumpIfFalse(afterLoop)
                 body.emitCode()
                 code += OpCode.Jump(beforeLoop)
-                afterLoop.address = code.endAddress
+                code += afterLoop
             }
         }
     }
 
     fun TypedExpression.emitCode() {
         when (this) {
-            is TypedExpression.Ref    -> code += OpCode.Load(name)
-            is TypedExpression.Lit    -> code += OpCode.Push(value)
-            is TypedExpression.Not    -> { exp.emitCode(); code += OpCode.Not }
-            is TypedExpression.Binary -> emitCode()
+            is TypedExpression.Ref ->
+                code += OpCode.Load(name)
+            is TypedExpression.Lit ->
+                code += OpCode.Push(value)
+            is TypedExpression.Not -> {
+                exp.emitCode()
+                code += OpCode.Not
+            }
+            is TypedExpression.Binary ->
+                emitCode()
         }
     }
 

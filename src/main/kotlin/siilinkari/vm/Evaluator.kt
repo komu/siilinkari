@@ -1,14 +1,19 @@
 package siilinkari.vm
 
-import siilinkari.ast.TypedStatement
 import siilinkari.objects.Value
 import siilinkari.parser.parseExpression
 import siilinkari.parser.parseStatement
 import siilinkari.translator.translate
 import siilinkari.types.TypeChecker
 import siilinkari.types.TypeEnvironment
+import siilinkari.types.TypedStatement
 import siilinkari.types.type
 
+/**
+ * Evaluator for opcodes.
+ *
+ * @see OpCode
+ */
 class Evaluator() {
     val environment = Environment()
     val typeEnvironment = TypeEnvironment()
@@ -51,7 +56,7 @@ class Evaluator() {
     private fun evaluateSegment(code: CodeSegment): Value? {
         val stack = ValueStack()
         var pc = 0
-        val end = code.endAddress
+        val end = code.lastAddress + 1
 
         while (pc != end) {
             val op = code[pc++]

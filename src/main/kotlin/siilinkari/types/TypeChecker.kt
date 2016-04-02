@@ -2,17 +2,35 @@ package siilinkari.types
 
 import siilinkari.ast.Expression
 import siilinkari.ast.Statement
-import siilinkari.ast.TypedStatement
 import siilinkari.lexer.SourceLocation
 import siilinkari.objects.Value
 import siilinkari.vm.UnboundVariableException
 import siilinkari.vm.VariableAlreadyBoundException
 
+/**
+ * Type-checker statements and expressions.
+ *
+ * Type-checker walks through the syntax tree, maintaining a [TypeEnvironment] mapping
+ * identifiers to their types and validates that all types agree. If type-checking
+ * succeeds, the checker will return a simplified and type checked tree where each
+ * expression is annotated with [Type]. If the checking fails, it will throw a
+ * [TypeCheckException].
+ */
 class TypeChecker(val environment: TypeEnvironment) {
 
+    /**
+     * Type-check a [Statement].
+     *
+     * @throws TypeCheckException
+     */
     fun typeCheck(stmt: Statement): TypedStatement =
         stmt.typeCheck(environment)
 
+    /**
+     * Type-check an [Expression].
+     *
+     * @throws TypeCheckException
+     */
     fun typeCheck(stmt: Expression): TypedExpression =
         stmt.typeCheck(environment)
 }
@@ -51,16 +69,31 @@ private fun Expression.typeCheckExpected(expectedType: Type, env: TypeEnvironmen
     typeCheck(env).expectAssignableTo(expectedType, location)
 
 private fun Statement.typeCheck(env: TypeEnvironment): TypedStatement = when (this) {
-    is Statement.Exp           -> TypedStatement.Exp(expression.typeCheck(env))
-    is Statement.Assign        -> TypedStatement.Assign(variable, expression.typeCheckExpected(env.lookupType(variable, location), env))
-    is Statement.Var           -> {
+    is Statement.Exp ->
+        TypedStatement.Exp(expression.typeCheck(env))
+    is Statement.Assign -> {
+        val variableType = env.lookupType(variable, location)
+        val typedLhs = expression.typeCheckExpected(variableType, env)
+        TypedStatement.Assign(variable, typedLhs)
+    }
+    is Statement.Var -> {
         val typed = expression.typeCheck(env)
         env.bindType(variable, typed.type, location)
         TypedStatement.Var(variable, typed)
     }
-    is Statement.If            -> TypedStatement.If(condition.typeCheckExpected(Type.Boolean, env), consequent.typeCheck(env), alternative?.typeCheck(env))
-    is Statement.While         -> TypedStatement.While(condition.typeCheckExpected(Type.Boolean, env), body.typeCheck(env))
-    is Statement.StatementList -> TypedStatement.StatementList(statements.map { it.typeCheck(env) })
+    is Statement.If -> {
+        val typedCondition = condition.typeCheckExpected(Type.Boolean, env)
+        val typedConsequent = consequent.typeCheck(env)
+        val typedAlternative = alternative?.typeCheck(env)
+        TypedStatement.If(typedCondition, typedConsequent, typedAlternative)
+    }
+    is Statement.While -> {
+        val typedCondition = condition.typeCheckExpected(Type.Boolean, env)
+        val typedBody = body.typeCheck(env)
+        TypedStatement.While(typedCondition, typedBody)
+    }
+    is Statement.StatementList ->
+        TypedStatement.StatementList(statements.map { it.typeCheck(env) })
 }
 
 private fun TypeEnvironment.lookupType(name: String, location: SourceLocation): Type =
@@ -78,6 +111,9 @@ private fun TypeEnvironment.bindType(name: String, type: Type, location: SourceL
     }
 }
 
+/**
+ * Returns the [Type] associated with a literal [Value].
+ */
 val Value.type: Type
     get() = when (this) {
         is Value.String  -> Type.String

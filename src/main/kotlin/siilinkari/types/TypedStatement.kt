@@ -1,7 +1,12 @@
-package siilinkari.ast
+package siilinkari.types
 
-import siilinkari.types.TypedExpression
-
+/**
+ * Represents a statement whose expressions have been type-checked.
+ *
+ * This is mostly analogous to statements in the original AST.
+ *
+ * @see TypedExpression
+ */
 sealed class TypedStatement {
     class Exp(val expression: TypedExpression) : TypedStatement()
     class Assign(val variable: String, val expression: TypedExpression) : TypedStatement()

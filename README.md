@@ -91,11 +91,14 @@ If you want to play around, here are some ideas to get started:
 
 - Add new `unless (x) { ... }` statement that works like `if (!x) { ... }`.
 - Convert `if`-statement to expression so you can say `var x = if (a) b else c;`.
+- Add a simple evaluator that evaluates either the typed AST directly instead of translating the code
+  to stack vm opcodes.
 - Implement a pretty printer: it should take an AST and write it to output properly formatted.
 - Modify lexer and parser so that semicolons are not required at the end of statements.
 - Modify lexer and parser to support indentation based syntax.
 - Add AST -> AST rewrite step that does constant folding before evaluation starts.
 - Add support for higher order functions and lambdas.
+- Add peephole optimizer for generated opcodes.
 
 ## Want more?
 

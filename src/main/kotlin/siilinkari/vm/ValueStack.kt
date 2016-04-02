@@ -3,6 +3,9 @@ package siilinkari.vm
 import siilinkari.objects.Value
 import java.util.*
 
+/**
+ * Runtime stack for values.
+ */
 class ValueStack {
 
     private val stack = ArrayList<Value>()

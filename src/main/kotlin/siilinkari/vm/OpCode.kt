@@ -5,6 +5,8 @@ import siilinkari.objects.Value
 sealed class OpCode {
     override fun toString() = javaClass.simpleName
 
+    open val isInitialized = true
+
     object Not : OpCode()
     object Add : OpCode()
     object Subtract : OpCode()
@@ -27,11 +29,16 @@ sealed class OpCode {
         override fun toString() = "Store $variable"
     }
 
-    class Jump(val label: Label) : OpCode() {
+    abstract class LabeledOpCode(val label: Label) : OpCode() {
+        override val isInitialized: Boolean
+            get() = label.isInitialized
+    }
+
+    class Jump(label: Label) : LabeledOpCode(label) {
         override fun toString() = "Jump $label"
     }
 
-    class JumpIfFalse(val label: Label) : OpCode() {
+    class JumpIfFalse(label: Label) : LabeledOpCode(label) {
         override fun toString() = "JumpIfFalse $label"
     }
 }

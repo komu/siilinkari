@@ -3,6 +3,9 @@ package siilinkari.vm
 import siilinkari.objects.Value
 import java.util.*
 
+/**
+ * Runtime environment mapping variable names to their values.
+ */
 class Environment {
 
     private val bindings = HashMap<String, Value>()

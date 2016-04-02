@@ -4,6 +4,9 @@ import siilinkari.vm.UnboundVariableException
 import siilinkari.vm.VariableAlreadyBoundException
 import java.util.*
 
+/**
+ * Mapping from variables to their types.
+ */
 class TypeEnvironment {
 
     private val bindings = HashMap<String, Type>()
