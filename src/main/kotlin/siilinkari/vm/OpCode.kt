@@ -14,7 +14,7 @@ sealed class OpCode {
     object Pop : OpCode()
 
     class Push(val value: Value) : OpCode() {
-        override fun toString() = "Push $value"
+        override fun toString() = "Push ${value.repr()}"
     }
 
     class Load(val variable: String) : OpCode() {

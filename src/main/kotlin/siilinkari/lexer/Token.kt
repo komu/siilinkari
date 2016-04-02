@@ -29,7 +29,7 @@ sealed class Token {
      * Literal value, e.g. `42`, `"foo"`, or `true`.
      */
     class Literal(val value: Value) : Token() {
-        override fun toString() = "[Literal $value]"
+        override fun toString() = "[Literal ${value.repr()}]"
         override fun equals(other: Any?) = other is Literal && value == other.value
         override fun hashCode(): Int = value.hashCode()
     }

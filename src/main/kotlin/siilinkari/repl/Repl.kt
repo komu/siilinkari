@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
             } else {
                 val result = evaluator.evaluateStatement(line)
                 if (result != null)
-                    println(result)
+                    println(result.repr())
             }
         } catch (e: SyntaxErrorException) {
             println("Syntax error: ${e.errorMessage}")

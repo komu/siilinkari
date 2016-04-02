@@ -26,7 +26,7 @@ sealed class Expression(val location: SourceLocation) {
 
     /** Literal value. */
     class Lit(val value: Value, location: SourceLocation) : Expression(location) {
-        override fun toString() = "[Lit $value]"
+        override fun toString() = "[Lit ${value.repr()}]"
     }
 
     /** Logical not. */

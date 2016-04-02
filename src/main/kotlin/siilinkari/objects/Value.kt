@@ -11,12 +11,23 @@ package siilinkari.objects
 sealed class Value {
 
     /**
+     * Returns a string representation of this value that is similar
+     * to the syntax used in source code. Used when printing AST and
+     * when printing values in REPL.
+     */
+    open fun repr(): kotlin.String = toString()
+
+    /**
      * Strings.
      */
     class String(val value: kotlin.String) : Value()  {
         override fun equals(other: Any?) = other is String && value == other.value
         override fun hashCode() = value.hashCode()
-        override fun toString() = '"' + value.replace("\"", "\\\"") + '"'
+        override fun toString() = value
+        override fun repr() = '"' + value.replace("\"", "\\\"") + '"'
+
+        operator fun plus(rhs: Value): String =
+            String(value + rhs.toString())
     }
 
     /**
