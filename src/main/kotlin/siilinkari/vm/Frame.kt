@@ -2,6 +2,9 @@ package siilinkari.vm
 
 import siilinkari.objects.Value
 
+/**
+ * Frame of local variables.
+ */
 class Frame(size: Int) {
 
     private val bindings = Array<Value>(size) { Value.Bool.False }

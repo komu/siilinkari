@@ -63,7 +63,7 @@ The evaluator consists of the following pipeline:
   abstract syntax tree             siilinkari.ast.{Expression, Statement}
           |
           |
-          o--------- type checker  siilinkari.types.{Type, TypeChecker, TypeEnvironment}
+          o--------- type checker  siilinkari.types.{Type, TypeChecker}, siilinkari.env.{StaticEnvironment, Binding}
           |
           v
     typed syntax tree              siilinkari.types.{TypedExpression, TypedStatement}
