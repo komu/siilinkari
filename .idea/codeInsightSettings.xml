@@ -2,12 +2,19 @@
 <project version="4">
   <component name="JavaProjectCodeInsightSettings">
     <excluded-names>
+      <name>com.oracle</name>
       <name>com.sun</name>
+      <name>java.awt</name>
       <name>java.beans</name>
+      <name>java.lang.ProcessBuilder.Redirect.Type</name>
       <name>java.lang.reflect.Type</name>
+      <name>java.net</name>
+      <name>java.security</name>
       <name>java.sql</name>
       <name>javafx</name>
       <name>javax.naming</name>
+      <name>javax.sound</name>
+      <name>javax.swing</name>
       <name>javax.xml</name>
       <name>jdk</name>
       <name>sun</name>

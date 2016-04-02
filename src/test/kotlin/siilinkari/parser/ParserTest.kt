@@ -73,6 +73,14 @@ class ParserTest {
         assertParseExpression("!(x + y)", "[Not [Plus [Ref x] [Ref y]]]")
     }
 
+    @Test
+    fun functionCall() {
+        assertParseExpression("foo()", "[Call [Ref foo] []]")
+        assertParseExpression("bar(1)", "[Call [Ref bar] [[Lit 1]]]")
+        assertParseExpression("baz(1, x)", "[Call [Ref baz] [[Lit 1], [Ref x]]]")
+        assertParseExpression("(baz)()", "[Call [Ref baz] []]")
+    }
+
     private fun assertSyntaxError(code: String) {
         assertFailsWith<SyntaxErrorException> {
             val stmt = parseStatement(code)

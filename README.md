@@ -7,9 +7,6 @@ In fact, the point of Siilinkari is not to write programs in it, but rather to f
 introduction to the world of compilers. You can browse the code, try out implementing new features
 and play around.
 
-Siilinkari is a very small subset of Kotlin, so every program written in Siilinkari should be a valid
-Kotlin program with same semantics. (But most Kotlin programs will not be supported by Siilinkari.)
-
 ## Build
 
 ```

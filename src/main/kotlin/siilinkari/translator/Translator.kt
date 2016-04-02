@@ -90,6 +90,11 @@ private class Translator {
             }
             is TypedExpression.Binary ->
                 emitCode()
+            is TypedExpression.Call -> {
+                args.forEach { it.emitCode() }
+                func.emitCode()
+                code += OpCode.Call
+            }
             else ->
                 error("unknown expression: $this")
         }

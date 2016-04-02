@@ -1,5 +1,7 @@
 package siilinkari.objects
 
+import siilinkari.types.Type
+
 /**
  * Represents the valid runtime values in programs.
  *
@@ -57,6 +59,15 @@ sealed class Value {
 
         operator fun plus(other: Integer) = Integer(value + other.value)
         operator fun minus(other: Integer) = Integer(value - other.value)
+        operator fun times(other: Integer) = Integer(value * other.value)
+    }
+
+    class PrimitiveFunction(val signature: Type.Function, private val func: (List<Value>) -> Value) : Value() {
+
+        operator fun invoke(args: List<Value>): Value = func(args)
+
+        val argumentCount: Int
+            get() = signature.argumentTypes.size
     }
 }
 

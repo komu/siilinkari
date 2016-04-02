@@ -1,8 +1,10 @@
 package siilinkari.vm
 
+import org.junit.Before
 import org.junit.Test
 import siilinkari.objects.Value
 import siilinkari.objects.value
+import siilinkari.types.Type
 import siilinkari.types.TypeCheckException
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -10,6 +12,14 @@ import kotlin.test.assertFailsWith
 class EvaluatorTest {
 
     val evaluator = Evaluator()
+
+    @Before
+    fun initializeGlobals() {
+        fun square(args: List<Value>): Value =
+            (args.single() as Value.Integer).let { it * it }
+
+        evaluator.bind("square", Value.PrimitiveFunction(Type.Function(listOf(Type.Int), Type.Int), ::square))
+    }
 
     @Test
     fun literalEvaluation() {
@@ -106,6 +116,30 @@ class EvaluatorTest {
     fun evaluationFailuresForCoercions() {
         assertExpressionTypeCheckFails("1 + \"foo\"")
         assertExpressionTypeCheckFails("!1")
+    }
+
+    @Test
+    fun directCalls() {
+        assertExpressionEvaluation("square(4)", 16.value)
+    }
+
+    @Test
+    fun functionCallsThroughLocalVariable() {
+        evaluator.bind("result", 0.value)
+
+        evaluateStatement("""
+            if (true) {
+                var sq = square;
+                result = sq(5);
+            }
+        """)
+
+        assertExpressionEvaluation("result", 25.value)
+    }
+
+    @Test
+    fun functionCallsThroughExpression() {
+        assertExpressionEvaluation("(square)(6)", 36.value)
     }
 
     @Test

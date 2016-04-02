@@ -19,4 +19,6 @@ class ValueStack {
     }
 
     fun topOrNull(): Value? = stack.lastOrNull()
+
+    override fun toString() = stack.toString()
 }

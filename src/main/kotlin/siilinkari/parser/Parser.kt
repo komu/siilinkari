@@ -54,11 +54,11 @@ private class Parser(lexer: Lexer) {
         Keyword.Var     -> parseVar()
         LeftBrace       -> parseStatementList()
         is Identifier   -> {
-            val (token, location) = lexer.readExpected<Identifier>()
-            val stmt = if (lexer.nextTokenIs(Punctuation.Equal))
-                parseAssignTo(token.name)
+            val exp = parseExpression();
+            val stmt = if (exp is Expression.Ref && lexer.nextTokenIs(Punctuation.Equal))
+                parseAssignTo(exp.name)
             else
-                Statement.Exp(Expression.Ref(token.name, location))
+                Statement.Exp(exp)
             lexer.expect(Punctuation.Semicolon)
             stmt
         }
@@ -123,10 +123,24 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * expression3 ::= identifier | literal | not | "(" expression ")"
+     * expression3 ::= expression4 [ '(' args ')']
      * ```
      */
     private fun parseExpression3(): Expression {
+        val exp = parseExpression4()
+
+        return if (lexer.nextTokenIs(Punctuation.LeftParen))
+            Expression.Call(exp, parseArgumentList())
+        else
+            exp
+    }
+
+    /**
+     * ```
+     * expression4 ::= identifier | literal | not | "(" expression ")"
+     * ```
+     */
+    private fun parseExpression4(): Expression {
         val (token, location) = lexer.peekToken()
 
         return when (token) {
@@ -201,6 +215,19 @@ private class Parser(lexer: Lexer) {
 
         return Expression.Ref(name, location)
     }
+
+    private fun parseArgumentList(): List<Expression> =
+        inParens {
+            if (lexer.nextTokenIs(Token.Punctuation.RightParen))
+                emptyList()
+            else {
+                val args = ArrayList<Expression>()
+                do {
+                    args += parseExpression()
+                } while (lexer.readNextIf(Token.Punctuation.Comma))
+                args
+            }
+        }
 
     private fun parseName(): Pair<String, SourceLocation> {
         val (token, location) = lexer.readExpected<Token.Identifier>()

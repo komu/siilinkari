@@ -15,6 +15,7 @@ sealed class OpCode {
     object Equal : OpCode()
     object ConcatString : OpCode()
     object Pop : OpCode()
+    object Call : OpCode()
 
     class Push(val value: Value) : OpCode() {
         override fun toString() = "Push ${value.repr()}"

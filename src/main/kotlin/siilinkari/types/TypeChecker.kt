@@ -41,6 +41,22 @@ private fun Expression.typeCheck(env: StaticEnvironment): TypedExpression = when
     is Expression.Ref    -> TypedExpression.Ref(env.lookupBinding(name, location))
     is Expression.Not    -> TypedExpression.Not(exp.typeCheckExpected(Type.Boolean, env))
     is Expression.Binary -> typeCheck(env)
+    is Expression.Call   -> typeCheck(env)
+}
+
+private fun Expression.Call.typeCheck(env: StaticEnvironment): TypedExpression {
+    val typedFunc = func.typeCheck(env)
+    if (typedFunc.type !is Type.Function)
+        throw TypeCheckException("expected function type for call, but got ${typedFunc.type}", location)
+
+    val expectedArgTypes = typedFunc.type.argumentTypes
+
+    if (args.size != expectedArgTypes.size)
+        throw TypeCheckException("expected ${expectedArgTypes.size} arguments, but got ${args.size}", location)
+
+    val typedArgs = args.mapIndexed { i, arg -> arg.typeCheckExpected(expectedArgTypes[i], env) }
+
+    return TypedExpression.Call(typedFunc, typedArgs, typedFunc.type.returnType)
 }
 
 private fun Expression.Binary.typeCheck(env: StaticEnvironment): TypedExpression = when (this) {
@@ -143,4 +159,5 @@ val Value.type: Type
         is Value.String  -> Type.String
         is Value.Bool    -> Type.Boolean
         is Value.Integer -> Type.Int
+        is Value.PrimitiveFunction -> signature
     }

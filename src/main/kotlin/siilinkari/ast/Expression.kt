@@ -34,6 +34,11 @@ sealed class Expression(val location: SourceLocation) {
         override fun toString() = "[Not $exp]"
     }
 
+    /** Function call. */
+    class Call(val func: Expression, val args: List<Expression>) : Expression(func.location) {
+        override fun toString() = "[Call $func $args]"
+    }
+
     /** Binary operators. */
     sealed class Binary(val lhs: Expression, val rhs: Expression, location: SourceLocation): Expression(location) {
         override fun toString() = "[${javaClass.simpleName} $lhs $rhs]"

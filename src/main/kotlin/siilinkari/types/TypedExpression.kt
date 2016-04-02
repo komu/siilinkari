@@ -31,6 +31,9 @@ sealed class TypedExpression(val type: Type) {
     /** Logical not. */
     class Not(val exp: TypedExpression): TypedExpression(Type.Boolean)
 
+    /** Function call. */
+    class Call(val func: TypedExpression, val args: List<TypedExpression>, type: Type) : TypedExpression(type)
+
     /** Binary operators. */
     sealed class Binary(val lhs: TypedExpression, val rhs: TypedExpression, type: Type): TypedExpression(type) {
 

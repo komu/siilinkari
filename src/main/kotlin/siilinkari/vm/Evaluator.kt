@@ -9,6 +9,7 @@ import siilinkari.translator.translate
 import siilinkari.types.TypeChecker
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
+import java.util.*
 
 /**
  * Evaluator for opcodes.
@@ -128,6 +129,15 @@ class Evaluator {
                 is OpCode.JumpIfFalse ->
                     if (!stack.pop<Value.Bool>().value)
                         pc = op.label.address
+                is OpCode.Call -> {
+                    val func = stack.pop<Value.PrimitiveFunction>()
+                    val args = ArrayList<Value>()
+                    repeat(func.argumentCount) {
+                        args += stack.popAny()
+                    }
+
+                    stack.push(func(args))
+                }
                 else ->
                     error("unknown opcode: $op")
             }
