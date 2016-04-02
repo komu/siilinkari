@@ -4,7 +4,6 @@ import siilinkari.ast.Expression
 import siilinkari.ast.Statement
 import siilinkari.env.Binding
 import siilinkari.env.StaticEnvironment
-import siilinkari.env.UnboundVariableException
 import siilinkari.env.VariableAlreadyBoundException
 import siilinkari.lexer.SourceLocation
 import siilinkari.objects.Value
@@ -126,11 +125,7 @@ private fun Statement.typeCheck(env: StaticEnvironment): TypedStatement = when (
 }
 
 private fun StaticEnvironment.lookupBinding(name: String, location: SourceLocation): Binding =
-    try {
-        this[name]
-    } catch (e: UnboundVariableException) {
-        throw TypeCheckException("unbound variable '$name'", location)
-    }
+    this[name] ?: throw TypeCheckException("unbound variable '$name'", location)
 
 private fun StaticEnvironment.bindType(name: String, type: Type, location: SourceLocation): Binding {
     try {

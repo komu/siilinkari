@@ -12,11 +12,9 @@ abstract class StaticEnvironment(private val parent: StaticEnvironment?) {
 
     /**
      * Returns the binding of given variable.
-     *
-     * @throws UnboundVariableException if variable does not exist
      */
-    operator fun get(name: String): Binding =
-        bindings[name] ?: parent?.get(name) ?: throw UnboundVariableException(name)
+    operator fun get(name: String): Binding? =
+        bindings[name] ?: parent?.get(name)
 
     /**
      * Create a new binding for variable having given [name] and [type].
