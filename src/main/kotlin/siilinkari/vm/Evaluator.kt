@@ -19,20 +19,44 @@ class Evaluator() {
     private val typeEnvironment = TypeEnvironment()
     private val typeChecker = TypeChecker(typeEnvironment)
 
+    /**
+     * Binds a global name to given value.
+     */
     fun bind(name: String, value: Value) {
         typeEnvironment.bind(name, value.type)
         environment.bind(name, value)
     }
 
+    /**
+     * Evaluates statement of code. If the statement is an expression
+     * statement, returns its value. Otherwise returns `null`.
+     */
     fun evaluateStatement(code: String): Value? {
         val translated = translate(code)
 
         return evaluateSegment(translated)
     }
 
+    /**
+     * Evaluates an expression and returns its value.
+     */
+    fun evaluateExpression(code: String): Value {
+        val exp = parseExpression(code)
+        val typedExp = typeChecker.typeCheck(exp)
+        val translated = typedExp.translate()
+
+        return evaluateSegment(translated)!!
+    }
+
+    /**
+     * Translates given code to opcodes and returns string representation of the opcodes.
+     */
     fun dump(code: String): String =
         translate(code).toString()
 
+    /**
+     * Translates code to opcodes.
+     */
     private fun translate(code: String): CodeSegment {
         val stmt = parseStatement(code)
         val typedStmt = typeChecker.typeCheck(stmt)
@@ -45,14 +69,11 @@ class Evaluator() {
         return translated
     }
 
-    fun evaluateExpression(code: String): Value {
-        val exp = parseExpression(code)
-        val typedExp = typeChecker.typeCheck(exp)
-        val translated = typedExp.translate()
-
-        return evaluateSegment(translated)!!
-    }
-
+    /**
+     * Evaluates given code segment. If the segment leaves a value on the stack
+     * (if it was compiled from an expression instead of statement), returns the
+     * value. Otherwise returns `null`.
+     */
     private fun evaluateSegment(code: CodeSegment): Value? {
         val stack = ValueStack()
         var pc = 0
