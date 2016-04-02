@@ -2,21 +2,23 @@ package siilinkari.types
 
 import siilinkari.ast.Expression
 import siilinkari.ast.Statement
+import siilinkari.env.Binding
+import siilinkari.env.StaticEnvironment
+import siilinkari.env.UnboundVariableException
+import siilinkari.env.VariableAlreadyBoundException
 import siilinkari.lexer.SourceLocation
 import siilinkari.objects.Value
-import siilinkari.vm.UnboundVariableException
-import siilinkari.vm.VariableAlreadyBoundException
 
 /**
  * Type-checker statements and expressions.
  *
- * Type-checker walks through the syntax tree, maintaining a [TypeEnvironment] mapping
+ * Type-checker walks through the syntax tree, maintaining a [StaticEnvironment] mapping
  * identifiers to their types and validates that all types agree. If type-checking
  * succeeds, the checker will return a simplified and type checked tree where each
  * expression is annotated with [Type]. If the checking fails, it will throw a
  * [TypeCheckException].
  */
-class TypeChecker(val environment: TypeEnvironment) {
+class TypeChecker(val environment: StaticEnvironment) {
 
     /**
      * Type-check a [Statement].
@@ -35,14 +37,14 @@ class TypeChecker(val environment: TypeEnvironment) {
         stmt.typeCheck(environment)
 }
 
-private fun Expression.typeCheck(env: TypeEnvironment): TypedExpression = when (this) {
+private fun Expression.typeCheck(env: StaticEnvironment): TypedExpression = when (this) {
     is Expression.Lit    -> TypedExpression.Lit(value, value.type)
-    is Expression.Ref    -> TypedExpression.Ref(name, env.lookupType(name, location))
+    is Expression.Ref    -> TypedExpression.Ref(env.lookupBinding(name, location))
     is Expression.Not    -> TypedExpression.Not(exp.typeCheckExpected(Type.Boolean, env))
     is Expression.Binary -> typeCheck(env)
 }
 
-private fun Expression.Binary.typeCheck(env: TypeEnvironment): TypedExpression = when (this) {
+private fun Expression.Binary.typeCheck(env: StaticEnvironment): TypedExpression = when (this) {
     is Expression.Binary.Plus ->
         typeCheck(env)
     is Expression.Binary.Minus -> {
@@ -60,7 +62,7 @@ private fun Expression.Binary.typeCheck(env: TypeEnvironment): TypedExpression =
     }
 }
 
-private fun Expression.Binary.Plus.typeCheck(env: TypeEnvironment): TypedExpression {
+private fun Expression.Binary.Plus.typeCheck(env: StaticEnvironment): TypedExpression {
     val typedLhs = lhs.typeCheck(env)
 
     return if (typedLhs.type == Type.String) {
@@ -74,7 +76,7 @@ private fun Expression.Binary.Plus.typeCheck(env: TypeEnvironment): TypedExpress
     }
 }
 
-private fun Expression.Binary.typeCheckMatching(env: TypeEnvironment): Pair<TypedExpression, TypedExpression> {
+private fun Expression.Binary.typeCheckMatching(env: StaticEnvironment): Pair<TypedExpression, TypedExpression> {
     val typedLhs = lhs.typeCheck(env)
     val typedRhs = rhs.typeCheck(env)
 
@@ -90,21 +92,21 @@ private fun TypedExpression.expectAssignableTo(expectedType: Type, location: Sou
     else
         throw TypeCheckException("expected type $expectedType, but was $type", location)
 
-private fun Expression.typeCheckExpected(expectedType: Type, env: TypeEnvironment): TypedExpression =
+private fun Expression.typeCheckExpected(expectedType: Type, env: StaticEnvironment): TypedExpression =
     typeCheck(env).expectAssignableTo(expectedType, location)
 
-private fun Statement.typeCheck(env: TypeEnvironment): TypedStatement = when (this) {
+private fun Statement.typeCheck(env: StaticEnvironment): TypedStatement = when (this) {
     is Statement.Exp ->
         TypedStatement.Exp(expression.typeCheck(env))
     is Statement.Assign -> {
-        val variableType = env.lookupType(variable, location)
-        val typedLhs = expression.typeCheckExpected(variableType, env)
-        TypedStatement.Assign(variable, typedLhs)
+        val binding = env.lookupBinding(variable, location)
+        val typedLhs = expression.typeCheckExpected(binding.type, env)
+        TypedStatement.Assign(binding, typedLhs)
     }
     is Statement.Var -> {
         val typed = expression.typeCheck(env)
-        env.bindType(variable, typed.type, location)
-        TypedStatement.Var(variable, typed)
+        val binding = env.bindType(variable, typed.type, location)
+        TypedStatement.Var(binding, typed)
     }
     is Statement.If -> {
         val typedCondition = condition.typeCheckExpected(Type.Boolean, env)
@@ -117,20 +119,22 @@ private fun Statement.typeCheck(env: TypeEnvironment): TypedStatement = when (th
         val typedBody = body.typeCheck(env)
         TypedStatement.While(typedCondition, typedBody)
     }
-    is Statement.StatementList ->
-        TypedStatement.StatementList(statements.map { it.typeCheck(env) })
+    is Statement.StatementList -> {
+        val childEnv = env.newScope()
+        TypedStatement.StatementList(statements.map { it.typeCheck(childEnv) })
+    }
 }
 
-private fun TypeEnvironment.lookupType(name: String, location: SourceLocation): Type =
+private fun StaticEnvironment.lookupBinding(name: String, location: SourceLocation): Binding =
     try {
         this[name]
     } catch (e: UnboundVariableException) {
         throw TypeCheckException("unbound variable '$name'", location)
     }
 
-private fun TypeEnvironment.bindType(name: String, type: Type, location: SourceLocation) {
+private fun StaticEnvironment.bindType(name: String, type: Type, location: SourceLocation): Binding {
     try {
-        this.bind(name, type)
+        return this.bind(name, type)
     } catch (e: VariableAlreadyBoundException) {
         throw TypeCheckException("variable already bound '$name'", location)
     }

@@ -6,6 +6,9 @@
       <name>java.beans</name>
       <name>java.lang.reflect.Type</name>
       <name>java.sql</name>
+      <name>javafx</name>
+      <name>javax.naming</name>
+      <name>javax.xml</name>
       <name>jdk</name>
       <name>sun</name>
     </excluded-names>

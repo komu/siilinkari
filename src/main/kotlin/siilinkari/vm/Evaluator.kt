@@ -1,11 +1,12 @@
 package siilinkari.vm
 
+import siilinkari.env.Binding
+import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.objects.Value
 import siilinkari.parser.parseExpression
 import siilinkari.parser.parseStatement
 import siilinkari.translator.translate
 import siilinkari.types.TypeChecker
-import siilinkari.types.TypeEnvironment
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
 
@@ -14,9 +15,9 @@ import siilinkari.types.type
  *
  * @see OpCode
  */
-class Evaluator() {
-    private val environment = Environment()
-    private val typeEnvironment = TypeEnvironment()
+class Evaluator {
+    private val environment = GlobalEnvironment()
+    private val typeEnvironment = GlobalStaticEnvironment()
     private val typeChecker = TypeChecker(typeEnvironment)
 
     /**
@@ -24,7 +25,7 @@ class Evaluator() {
      */
     fun bind(name: String, value: Value) {
         typeEnvironment.bind(name, value.type)
-        environment.bind(name, value)
+        environment[name] = value
     }
 
     /**
@@ -78,6 +79,7 @@ class Evaluator() {
         val stack = ValueStack()
         var pc = 0
         val end = code.lastAddress + 1
+        val frame = Frame(code.frameSize)
 
         while (pc != end) {
             val op = code[pc++]
@@ -109,11 +111,18 @@ class Evaluator() {
                 is OpCode.Push ->
                     stack.push(op.value)
                 is OpCode.Load ->
-                    stack.push(environment[op.variable])
-                is OpCode.Store ->
-                    environment[op.variable] = stack.pop<Value>()
-                is OpCode.Bind ->
-                    environment.bind(op.variable, stack.pop<Value>())
+                    stack.push(when (op.binding) {
+                        is Binding.Local -> frame[op.binding.index]
+                        is Binding.Global -> environment[op.binding.name]
+                    })
+                is OpCode.Store -> {
+                    val value = stack.pop<Value>()
+                    when (op.binding) {
+                        is Binding.Local -> frame[op.binding.index] = value
+                        is Binding.Global -> environment[op.binding.name] = value
+                        else -> error("unknown binding ${op.binding}")
+                    }
+                }
                 is OpCode.Jump ->
                     pc = op.label.address
                 is OpCode.JumpIfFalse ->

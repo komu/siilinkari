@@ -1,6 +1,7 @@
 package siilinkari.types
 
 import org.junit.Test
+import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.parser.parseExpression
 import siilinkari.parser.parseStatement
 import kotlin.test.assertEquals
@@ -8,7 +9,7 @@ import kotlin.test.assertFailsWith
 
 class TypeCheckerTest {
 
-    val env = TypeEnvironment()
+    val env = GlobalStaticEnvironment()
     val typeChecker = TypeChecker(env)
 
     @Test
@@ -69,6 +70,38 @@ class TypeCheckerTest {
         assertExpressionType(Type.String, "\"foo\" + \"bar\"")
         assertExpressionType(Type.String, "\"foo\" + 42")
         assertExpressionType(Type.String, "\"foo\" + true")
+    }
+
+    @Test
+    fun variableCanBeReboundInNestedEnvironment() {
+        env.bind("x", Type.Boolean)
+
+        typeCheckStatement("if (x) { var x = 42; }")
+        typeCheckStatement("while (x) { var x = 42; }")
+    }
+
+    @Test
+    fun variableIsVisibleInNestedEnvironment() {
+        typeCheckStatement("""
+            if (true) {
+                var x = 4;
+                if (true) {
+                    var y = x;
+                }
+            }
+            """)
+    }
+
+    @Test
+    fun variablesDefinedByNestedEnvironmentAreNotVisibleOutside() {
+        assertStatementTypeCheckFails("""
+            if (true) {
+                if (true) {
+                    var x = 4;
+                }
+                var y = x;
+            }
+            """)
     }
 
     @Test

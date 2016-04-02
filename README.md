@@ -23,18 +23,18 @@ Kotlin program with same semantics. (But most Kotlin programs will not be suppor
 Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.
 > var x = 4;
 > var s = "";
-> if (x == 2 + 2) s = "It worked!";
+> if (x == 2 + 2) { var t = "It"; s = t + " worked!"; }
 > s
 "It worked!"
-> :dump if (x == 2 + 2) s = "It worked!";
-0 Load x
+> :dump if (x == 2 + 2) { var t = "It"; s = t + " worked!"; }
+0 Load [Global x]
 1 Push 2
 2 Push 2
 3 Add
 4 Equal
 5 JumpIfFalse [Label 8]
 6 Push "It worked!"
-7 Store s
+7 Store [Global s]
 > exit
 Thank you for visiting Siilinkari, have a nice day!
 ```

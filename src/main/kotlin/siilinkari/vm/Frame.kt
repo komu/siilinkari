@@ -1,0 +1,21 @@
+package siilinkari.vm
+
+import siilinkari.objects.Value
+
+class Frame(size: Int) {
+
+    private val bindings = Array<Value>(size) { Value.Bool.False }
+
+    /**
+     * Assigns a new value to existing variable.
+     */
+    operator fun set(index: Int, value: Value) {
+        bindings[index] = value
+    }
+
+    /**
+     * Returns the value bound to given variable.
+     */
+    operator fun get(index: Int): Value =
+        bindings[index]
+}

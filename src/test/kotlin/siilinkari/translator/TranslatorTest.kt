@@ -1,9 +1,9 @@
 package siilinkari.translator
 
 import org.junit.Test
+import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.parser.parseStatement
 import siilinkari.types.TypeChecker
-import siilinkari.types.TypeEnvironment
 import kotlin.test.assertEquals
 
 class TranslatorTest {
@@ -22,16 +22,16 @@ class TranslatorTest {
             0 Push 4
             1 Push 1
             2 Add
-            3 Bind x
-            4 Load x
+            3 Store [Local 0 (x)]
+            4 Load [Local 0 (x)]
             5 Push 0
             6 Equal
             7 Not
             8 JumpIfFalse [Label 14]
-            9 Load x
+            9 Load [Local 0 (x)]
             10 Push 1
             11 Subtract
-            12 Store x
+            12 Store [Local 0 (x)]
             13 Jump [Label 4]
             """)
     }
@@ -41,7 +41,7 @@ class TranslatorTest {
     }
 
     private fun translateStatement(code: String): String {
-        val typed = TypeChecker(TypeEnvironment()).typeCheck(parseStatement(code))
+        val typed = TypeChecker(GlobalStaticEnvironment()).typeCheck(parseStatement(code))
 
         return typed.translate().toString()
     }

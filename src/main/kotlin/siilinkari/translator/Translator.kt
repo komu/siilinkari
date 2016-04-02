@@ -45,7 +45,7 @@ private class Translator {
             }
             is TypedStatement.Var -> {
                 expression.emitCode()
-                code += OpCode.Bind(variable)
+                code += OpCode.Store(variable)
             }
             is TypedStatement.If -> {
                 val falseBranch = Label()
@@ -81,7 +81,7 @@ private class Translator {
     fun TypedExpression.emitCode() {
         when (this) {
             is TypedExpression.Ref ->
-                code += OpCode.Load(name)
+                code += OpCode.Load(binding)
             is TypedExpression.Lit ->
                 code += OpCode.Push(value)
             is TypedExpression.Not -> {

@@ -1,4 +1,4 @@
-package siilinkari.vm
+package siilinkari.env
 
 /**
  * Exception thrown when variable is not found from environment.

@@ -1,5 +1,6 @@
 package siilinkari.types
 
+import siilinkari.env.Binding
 import siilinkari.objects.Value
 
 /**
@@ -22,7 +23,7 @@ import siilinkari.objects.Value
 sealed class TypedExpression(val type: Type) {
 
     /** Reference to a variable. */
-    class Ref(val name: String, type: Type) : TypedExpression(type)
+    class Ref(val binding: Binding) : TypedExpression(binding.type)
 
     /** Literal value */
     class Lit(val value: Value, type: Type) : TypedExpression(type)
