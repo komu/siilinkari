@@ -10,7 +10,6 @@ import kotlin.test.assertFailsWith
 class EvaluatorTest {
 
     val evaluator = Evaluator()
-    val env = evaluator.environment
 
     @Test
     fun literalEvaluation() {
@@ -39,7 +38,7 @@ class EvaluatorTest {
 
         evaluateStatement("x = 123;")
 
-        assertEquals(123.value, env["x"])
+        assertExpressionEvaluation("x", 123.value)
     }
 
     @Test
@@ -49,12 +48,12 @@ class EvaluatorTest {
         evaluator.bind("r", 0.value)
 
         evaluateStatement("if (x) r = 123; else r = y;")
-        assertEquals(123.value, env["r"])
+        assertExpressionEvaluation("r", 123.value)
 
-        evaluator.environment["x"] = false.value
+        evaluateStatement("x = false;")
 
         evaluateStatement("if (x) r = 123; else r = y;")
-        assertEquals(42.value, env["r"])
+        assertExpressionEvaluation("r", 42.value)
     }
 
     @Test
@@ -72,10 +71,10 @@ class EvaluatorTest {
         evaluator.bind("r", 0.value)
 
         evaluateStatement("if (false) r = 1;")
-        assertEquals(0.value, env["r"])
+        assertExpressionEvaluation("r", 0.value)
 
         evaluateStatement("if (true) r = 2;")
-        assertEquals(2.value, env["r"])
+        assertExpressionEvaluation("r", 2.value)
     }
 
     @Test
@@ -92,9 +91,9 @@ class EvaluatorTest {
             }
         """)
 
-        assertEquals(0.value, env["x"])
-        assertEquals(5.value, env["a"])
-        assertEquals(15.value, env["b"])
+        assertExpressionEvaluation("x", 0.value)
+        assertExpressionEvaluation("a", 5.value)
+        assertExpressionEvaluation("b", 15.value)
     }
 
     @Test

@@ -15,9 +15,9 @@ import siilinkari.types.type
  * @see OpCode
  */
 class Evaluator() {
-    val environment = Environment()
-    val typeEnvironment = TypeEnvironment()
-    val typeChecker = TypeChecker(typeEnvironment)
+    private val environment = Environment()
+    private val typeEnvironment = TypeEnvironment()
+    private val typeChecker = TypeChecker(typeEnvironment)
 
     fun bind(name: String, value: Value) {
         typeEnvironment.bind(name, value.type)
