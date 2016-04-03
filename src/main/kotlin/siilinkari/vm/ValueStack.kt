@@ -20,5 +20,12 @@ class ValueStack {
 
     fun topOrNull(): Value? = stack.lastOrNull()
 
+    fun popValues(count: Int): List<Value> {
+        val removed = stack.subList(stack.size - count, stack.size)
+        val values = ArrayList<Value>(removed.asReversed())
+        removed.clear()
+        return values
+    }
+
     override fun toString() = stack.toString()
 }

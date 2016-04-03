@@ -1,6 +1,7 @@
 package siilinkari.objects
 
 import siilinkari.types.Type
+import siilinkari.vm.CodeSegment
 
 /**
  * Represents the valid runtime values in programs.
@@ -68,11 +69,21 @@ sealed class Value {
         operator fun div(other: Integer) = Integer(value / other.value)
     }
 
-    abstract class Function(val signature: Type.Function) : Value() {
-        abstract operator fun invoke(args: List<Value>): Value
-
+    sealed class Function(val signature: Type.Function) : Value() {
         val argumentCount: Int
             get() = signature.argumentTypes.size
+
+        /**
+         * Function whose implementation is byte-code.
+         */
+        class Compound(signature: Type.Function, val argIndices: List<Int>, val code: CodeSegment) : Function(signature)
+
+        /**
+         * Function implemented as native function.
+         */
+        class Native(signature: Type.Function, private val func: (List<Value>) -> Value) : Value.Function(signature) {
+            operator fun invoke(args: List<Value>): Value = func(args)
+        }
     }
 }
 

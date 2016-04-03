@@ -10,7 +10,6 @@ import siilinkari.types.Type
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
 import siilinkari.types.typeCheck
-import java.util.*
 
 /**
  * Evaluator for opcodes.
@@ -87,23 +86,18 @@ class Evaluator {
         // The function body needs to be analyzed in a new scope that contains
         // bindings for all arguments.
         val scope = typeEnvironment.newScope()
-        val bindings = args.map {
+        val argIndices = args.map {
             val (name, type) = it
-            scope.bind(name, type)
+            scope.bind(name, type).index
         }
 
         val typedExp = exp.typeCheck(scope)
         val segment = typedExp.translate()
 
-        return object : Value.Function(Type.Function(args.map { it.second }, typedExp.type)) {
-            override fun invoke(args: List<Value>): Value {
-                val frame = Frame(segment.frameSize)
-                args.forEachIndexed { i, arg ->
-                    frame[bindings[i].index] = arg
-                }
-                return evaluateSegment(segment, frame)
-            }
-        }
+        val argTypes = args.map { it.second }
+        val signature = Type.Function(argTypes, typedExp.type)
+
+        return Value.Function.Compound(signature, argIndices, segment)
     }
 
     /**
@@ -175,12 +169,14 @@ class Evaluator {
                         pc = op.label.address
                 is OpCode.Call -> {
                     val func = stack.pop<Value.Function>()
-                    val args = ArrayList<Value>()
-                    repeat(func.argumentCount) {
-                        args += stack.popAny()
-                    }
+                    val args = stack.popValues(func.argumentCount)
 
-                    stack.push(func(args))
+                    when (func) {
+                        is Value.Function.Compound ->
+                            stack.push(evaluateSegment(func.code, Frame(func.code.frameSize, func.argIndices.zip(args))))
+                        is Value.Function.Native ->
+                            stack.push(func(args))
+                    }
                 }
                 else ->
                     error("unknown opcode: $op")
