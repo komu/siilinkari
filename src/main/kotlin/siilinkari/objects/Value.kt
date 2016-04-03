@@ -76,7 +76,7 @@ sealed class Value {
         /**
          * Function whose implementation is byte-code.
          */
-        class Compound(signature: Type.Function, val argIndices: List<Int>, val code: CodeSegment) : Function(signature)
+        class Compound(signature: Type.Function, val code: CodeSegment) : Function(signature)
 
         /**
          * Function implemented as native function.

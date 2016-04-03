@@ -9,24 +9,18 @@ import siilinkari.vm.OpCode
 /**
  * Translates [TypedStatement] to [CodeSegment] containing [OpCode]s for vm to run.
  */
-fun TypedStatement.translate(): CodeSegment {
-    val translator = Translator()
-    translator.apply { emitCode() }
-    return translator.code.build()
+fun TypedStatement.translateTo(code: CodeSegment.Builder) {
+    Translator(code).apply { emitCode() }
 }
 
 /**
  * Translates [TypedExpression] to [CodeSegment] containing [OpCode]s for vm to run.
  */
-fun TypedExpression.translate(): CodeSegment {
-    val translator = Translator()
-    translator.apply { emitCode() }
-    return translator.code.build()
+fun TypedExpression.translateTo(code: CodeSegment.Builder) {
+    Translator(code).apply { emitCode() }
 }
 
-private class Translator {
-
-    val code = CodeSegment.Builder()
+class Translator(private val code: CodeSegment.Builder) {
 
     fun TypedStatement.emitCode() {
         when (this) {

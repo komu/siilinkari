@@ -5,7 +5,7 @@ import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.objects.Value
 import siilinkari.parser.parseExpression
 import siilinkari.parser.parseStatement
-import siilinkari.translator.translate
+import siilinkari.translator.translateTo
 import siilinkari.types.Type
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
@@ -19,6 +19,7 @@ import siilinkari.types.typeCheck
 class Evaluator {
     private val environment = GlobalEnvironment()
     private val typeEnvironment = GlobalStaticEnvironment()
+    private val stack = ValueStack()
 
     /**
      * Binds a global name to given value.
@@ -42,7 +43,8 @@ class Evaluator {
     fun evaluateStatement(code: String): Value {
         val translated = translate(code)
 
-        return evaluateSegment(translated)
+        evaluateSegment(translated)
+        return stack.topOrNull() ?: Value.Unit
     }
 
     /**
@@ -51,9 +53,11 @@ class Evaluator {
     fun evaluateExpression(code: String): Value {
         val exp = parseExpression(code)
         val typedExp = exp.typeCheck(typeEnvironment)
-        val translated = typedExp.translate()
+        val translated = CodeSegment.Builder()
+        typedExp.translateTo(translated)
 
-        return evaluateSegment(translated)
+        evaluateSegment(translated.build())
+        return stack.topOrNull() ?: Value.Unit
     }
 
     /**
@@ -69,12 +73,13 @@ class Evaluator {
         val stmt = parseStatement(code)
         val typedStmt = stmt.typeCheck(typeEnvironment)
 
-        val translated = if (typedStmt is TypedStatement.Exp) {
-            typedStmt.expression.translate()
+        val translated = CodeSegment.Builder()
+        if (typedStmt is TypedStatement.Exp) {
+            typedStmt.expression.translateTo(translated)
         } else {
-            typedStmt.translate()
+            typedStmt.translateTo(translated)
         }
-        return translated
+        return translated.build()
     }
 
     /**
@@ -84,29 +89,31 @@ class Evaluator {
         val exp = parseExpression(code)
 
         // The function body needs to be analyzed in a new scope that contains
-        // bindings for all arguments.
+        // bindings for all arguments. Create a new scope and at the same time
+        // create prepare a function prologue that pops all arguments from the
+        // stack into local variables.
         val scope = typeEnvironment.newScope()
-        val argIndices = args.map {
-            val (name, type) = it
-            scope.bind(name, type).index
+        val codeSegment = CodeSegment.Builder()
+        for ((name, type) in args) {
+            val binding = scope.bind(name, type)
+            codeSegment += OpCode.Store(binding)
         }
 
         val typedExp = exp.typeCheck(scope)
-        val segment = typedExp.translate()
+
+        typedExp.translateTo(codeSegment)
 
         val argTypes = args.map { it.second }
         val signature = Type.Function(argTypes, typedExp.type)
 
-        return Value.Function.Compound(signature, argIndices, segment)
+        return Value.Function.Compound(signature, codeSegment.build())
     }
 
     /**
-     * Evaluates given code segment. If the segment leaves a value on the stack
-     * (if it was compiled from an expression instead of statement), returns the
-     * value. Otherwise returns [Value.Unit].
+     * Evaluates given code segment.
      */
-    private fun evaluateSegment(code: CodeSegment, frame: Frame = Frame(code.frameSize)): Value {
-        val stack = ValueStack()
+    private fun evaluateSegment(code: CodeSegment) {
+        val frame = Frame(code.frameSize)
         var pc = 0
         val end = code.lastAddress + 1
 
@@ -169,20 +176,17 @@ class Evaluator {
                         pc = op.label.address
                 is OpCode.Call -> {
                     val func = stack.pop<Value.Function>()
-                    val args = stack.popValues(func.argumentCount)
 
                     when (func) {
                         is Value.Function.Compound ->
-                            stack.push(evaluateSegment(func.code, Frame(func.code.frameSize, func.argIndices.zip(args))))
+                            evaluateSegment(func.code)
                         is Value.Function.Native ->
-                            stack.push(func(args))
+                            stack.push(func(stack.popValues(func.argumentCount)))
                     }
                 }
                 else ->
                     error("unknown opcode: $op")
             }
         }
-
-        return stack.topOrNull() ?: Value.Unit
     }
 }
