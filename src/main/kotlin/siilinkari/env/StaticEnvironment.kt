@@ -50,7 +50,8 @@ abstract class StaticEnvironment(private val parent: StaticEnvironment?) {
  * Global environment.
  */
 class GlobalStaticEnvironment : StaticEnvironment(null) {
-    override fun newBinding(name: String, type: Type): Binding.Global = Binding.Global(name, type)
+    private var bindingIndexSequence = 0
+    override fun newBinding(name: String, type: Type): Binding.Global = Binding.Global(name, type, bindingIndexSequence++)
     override fun newScope(): StaticEnvironment = LocalFrameEnvironment(this)
 }
 

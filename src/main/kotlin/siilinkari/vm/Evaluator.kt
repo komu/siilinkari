@@ -26,8 +26,8 @@ class Evaluator {
      * Binds a global name to given value.
      */
     fun bind(name: String, value: Value) {
-        typeEnvironment.bind(name, value.type)
-        environment[name] = value
+        val binding = typeEnvironment.bind(name, value.type)
+        environment[binding.index] = value
     }
 
     /**
@@ -90,7 +90,7 @@ class Evaluator {
         val scope = typeEnvironment.newScope()
         val bindings = args.map {
             val (name, type) = it
-            scope.bind(name, type) as Binding.Local
+            scope.bind(name, type)
         }
 
         val typedExp = TypeChecker(scope).typeCheck(exp)
@@ -159,13 +159,13 @@ class Evaluator {
                 is OpCode.Load ->
                     stack.push(when (op.binding) {
                         is Binding.Local -> frame[op.binding.index]
-                        is Binding.Global -> environment[op.binding.name]
+                        is Binding.Global -> environment[op.binding.index]
                     })
                 is OpCode.Store -> {
                     val value = stack.pop<Value>()
                     when (op.binding) {
                         is Binding.Local -> frame[op.binding.index] = value
-                        is Binding.Global -> environment[op.binding.name] = value
+                        is Binding.Global -> environment[op.binding.index] = value
                         else -> error("unknown binding ${op.binding}")
                     }
                 }
