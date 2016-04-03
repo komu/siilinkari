@@ -7,7 +7,7 @@ import siilinkari.objects.Value
  */
 class Frame(size: Int) {
 
-    private val bindings = Array<Value>(size) { Value.Bool.False }
+    private val bindings = arrayOfNulls<Value?>(size)
 
     /**
      * Assigns a new value to existing variable.
@@ -20,5 +20,5 @@ class Frame(size: Int) {
      * Returns the value bound to given variable.
      */
     operator fun get(index: Int): Value =
-        bindings[index]
+        bindings[index]!!
 }
