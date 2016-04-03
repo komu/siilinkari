@@ -36,6 +36,15 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>, val fra
             label.address = opCodes.size
         }
 
+        fun addRelocated(segment: CodeSegment): Int {
+            val address = opCodes.size
+
+            for (op in segment.opCodes)
+                opCodes += op.relocate(address)
+
+            return address
+        }
+
         /**
          * Builds the segment.
          */

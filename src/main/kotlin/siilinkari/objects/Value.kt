@@ -1,7 +1,6 @@
 package siilinkari.objects
 
 import siilinkari.types.Type
-import siilinkari.vm.CodeSegment
 
 /**
  * Represents the valid runtime values in programs.
@@ -76,7 +75,7 @@ sealed class Value {
         /**
          * Function whose implementation is byte-code.
          */
-        class Compound(signature: Type.Function, val code: CodeSegment) : Function(signature)
+        class Compound(signature: Type.Function, val address: Int, val frameSize: Int) : Function(signature)
 
         /**
          * Function implemented as native function.

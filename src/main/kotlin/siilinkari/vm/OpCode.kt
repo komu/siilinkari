@@ -8,6 +8,7 @@ sealed class OpCode {
 
     open val isInitialized = true
     open val binding: Binding? = null
+    open fun relocate(address: Int) = this
 
     object Not : OpCode()
     object Add : OpCode()
@@ -41,9 +42,11 @@ sealed class OpCode {
 
     class Jump(label: Label) : LabeledOpCode(label) {
         override fun toString() = "Jump $label"
+        override fun relocate(address: Int) = Jump(label.relocate(address))
     }
 
     class JumpIfFalse(label: Label) : LabeledOpCode(label) {
         override fun toString() = "JumpIfFalse $label"
+        override fun relocate(address: Int) = JumpIfFalse(label.relocate(address))
     }
 }

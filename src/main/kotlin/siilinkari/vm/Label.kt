@@ -46,4 +46,10 @@ class Label {
      */
     val isInitialized: Boolean
         get() = _address != null
+
+    fun relocate(address: Int): Label {
+        val label = Label()
+        label.address = this.address + address
+        return label
+    }
 }

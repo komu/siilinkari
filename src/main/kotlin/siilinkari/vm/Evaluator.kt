@@ -10,6 +10,7 @@ import siilinkari.types.Type
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
 import siilinkari.types.typeCheck
+import java.util.*
 
 /**
  * Evaluator for opcodes.
@@ -20,6 +21,7 @@ class Evaluator {
     private val environment = GlobalEnvironment()
     private val typeEnvironment = GlobalStaticEnvironment()
     private val stack = ValueStack()
+    private val globalCode = CodeSegment.Builder()
 
     /**
      * Binds a global name to given value.
@@ -110,21 +112,33 @@ class Evaluator {
         val argTypes = args.map { it.second }
         val signature = Type.Function(argTypes, typedExp.type)
 
-        return Value.Function.Compound(signature, codeSegment.build())
+        val segment = codeSegment.build()
+        val address = globalCode.addRelocated(segment)
+
+        return Value.Function.Compound(signature, address, segment.frameSize)
     }
 
     /**
      * Evaluates given code segment.
      */
-    private fun evaluateSegment(code: CodeSegment) {
-        val frame = Frame(code.frameSize)
-        var pc = 0
+    private fun evaluateSegment(segment: CodeSegment) {
+        val codeBuilder = CodeSegment.Builder()
+        codeBuilder.addRelocated(globalCode.build())
+        var pc = codeBuilder.addRelocated(segment)
+        val code = codeBuilder.build()
+        var frame = Frame(segment.frameSize)
+        val pcStack = ArrayList<Int>()
+        val frameStack = ArrayList<Frame>()
 
         while (true) {
             val op = code[pc++]
             when (op) {
-                OpCode.Ret ->
-                    return
+                OpCode.Ret -> {
+                    if (pcStack.isEmpty())
+                        return
+                    pc = pcStack.removeAt(pcStack.lastIndex)
+                    frame = frameStack.removeAt(frameStack.lastIndex)
+                }
                 OpCode.Pop ->
                     stack.pop<Value>()
                 OpCode.Not ->
@@ -183,8 +197,12 @@ class Evaluator {
                     val func = stack.pop<Value.Function>()
 
                     when (func) {
-                        is Value.Function.Compound ->
-                            evaluateSegment(func.code)
+                        is Value.Function.Compound -> {
+                            pcStack.add(pc)
+                            frameStack.add(frame)
+                            pc = func.address
+                            frame = Frame(func.frameSize)
+                        }
                         is Value.Function.Native ->
                             stack.push(func(stack.popValues(func.argumentCount)))
                     }
