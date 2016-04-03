@@ -2,6 +2,7 @@ package siilinkari.repl
 
 import siilinkari.lexer.SyntaxErrorException
 import siilinkari.objects.Value
+import siilinkari.runtime.registerRuntimeFunctions
 import siilinkari.types.TypeCheckException
 import siilinkari.vm.Evaluator
 import java.util.*
@@ -13,6 +14,7 @@ fun main(args: Array<String>) {
 
     val scanner = Scanner(System.`in`)
     val evaluator = Evaluator()
+    registerRuntimeFunctions(evaluator)
 
     println("Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.")
 

@@ -4,6 +4,7 @@ import org.junit.Before
 import org.junit.Test
 import siilinkari.objects.Value
 import siilinkari.objects.value
+import siilinkari.runtime.fun1
 import siilinkari.types.Type
 import siilinkari.types.TypeCheckException
 import kotlin.test.assertEquals
@@ -15,10 +16,7 @@ class EvaluatorTest {
 
     @Before
     fun initializeGlobals() {
-        fun square(args: List<Value>): Value =
-            (args.single() as Value.Integer).let { it * it }
-
-        evaluator.bind("square", Value.PrimitiveFunction(Type.Function(listOf(Type.Int), Type.Int), ::square))
+        evaluator.bind("square", fun1<Value.Integer>(Type.Int, Type.Int) { it  * it })
     }
 
     @Test
