@@ -160,5 +160,5 @@ val Value.type: Type
         is Value.String  -> Type.String
         is Value.Bool    -> Type.Boolean
         is Value.Integer -> Type.Int
-        is Value.PrimitiveFunction -> signature
+        is Value.Function -> signature
     }

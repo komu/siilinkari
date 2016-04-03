@@ -16,7 +16,7 @@ class EvaluatorTest {
 
     @Before
     fun initializeGlobals() {
-        evaluator.bind("square", fun1<Value.Integer>(Type.Int, Type.Int) { it  * it })
+        evaluator.bind("square", fun1<Value.Integer>(Type.Int, Type.Int) { it * it })
     }
 
     @Test
@@ -138,6 +138,13 @@ class EvaluatorTest {
     @Test
     fun functionCallsThroughExpression() {
         assertExpressionEvaluation("(square)(6)", 36.value)
+    }
+
+    @Test
+    fun expressionFunctions() {
+        evaluator.bindFunction("sub", listOf("x" to Type.Int, "y" to Type.Int), "x - y")
+
+        assertExpressionEvaluation("sub(7, 4)", 3.value)
     }
 
     @Test

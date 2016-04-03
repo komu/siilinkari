@@ -67,9 +67,8 @@ sealed class Value {
         operator fun times(other: Integer) = Integer(value * other.value)
     }
 
-    class PrimitiveFunction(val signature: Type.Function, private val func: (List<Value>) -> Value) : Value() {
-
-        operator fun invoke(args: List<Value>): Value = func(args)
+    abstract class Function(val signature: Type.Function) : Value() {
+        abstract operator fun invoke(args: List<Value>): Value
 
         val argumentCount: Int
             get() = signature.argumentTypes.size

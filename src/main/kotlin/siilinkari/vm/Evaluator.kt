@@ -6,6 +6,7 @@ import siilinkari.objects.Value
 import siilinkari.parser.parseExpression
 import siilinkari.parser.parseStatement
 import siilinkari.translator.translate
+import siilinkari.types.Type
 import siilinkari.types.TypeChecker
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
@@ -27,6 +28,13 @@ class Evaluator {
     fun bind(name: String, value: Value) {
         typeEnvironment.bind(name, value.type)
         environment[name] = value
+    }
+
+    /**
+     * Binds a global function using given expression as body.
+     */
+    fun bindFunction(name: String, args: List<Pair<String, Type>>, code: String) {
+        bind(name, createFunctionFromExpression(args, code))
     }
 
     /**
@@ -72,15 +80,42 @@ class Evaluator {
     }
 
     /**
+     * Creates a callable function from given expression.
+     */
+    private fun createFunctionFromExpression(args: List<Pair<String, Type>>, code: String): Value.Function {
+        val exp = parseExpression(code)
+
+        // The function body needs to be analyzed in a new scope that contains
+        // bindings for all arguments.
+        val scope = typeEnvironment.newScope()
+        val bindings = args.map {
+            val (name, type) = it
+            scope.bind(name, type) as Binding.Local
+        }
+
+        val typedExp = TypeChecker(scope).typeCheck(exp)
+        val segment = typedExp.translate()
+
+        return object : Value.Function(Type.Function(args.map { it.second }, typedExp.type)) {
+            override fun invoke(args: List<Value>): Value {
+                val frame = Frame(segment.frameSize)
+                args.forEachIndexed { i, arg ->
+                    frame[bindings[i].index] = arg
+                }
+                return evaluateSegment(segment, frame)
+            }
+        }
+    }
+
+    /**
      * Evaluates given code segment. If the segment leaves a value on the stack
      * (if it was compiled from an expression instead of statement), returns the
      * value. Otherwise returns [Value.Unit].
      */
-    private fun evaluateSegment(code: CodeSegment): Value {
+    private fun evaluateSegment(code: CodeSegment, frame: Frame = Frame(code.frameSize)): Value {
         val stack = ValueStack()
         var pc = 0
         val end = code.lastAddress + 1
-        val frame = Frame(code.frameSize)
 
         while (pc != end) {
             val op = code[pc++]
@@ -130,7 +165,7 @@ class Evaluator {
                     if (!stack.pop<Value.Bool>().value)
                         pc = op.label.address
                 is OpCode.Call -> {
-                    val func = stack.pop<Value.PrimitiveFunction>()
+                    val func = stack.pop<Value.Function>()
                     val args = ArrayList<Value>()
                     repeat(func.argumentCount) {
                         args += stack.popAny()
