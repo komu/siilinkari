@@ -134,6 +134,16 @@ class Evaluator {
                     val lhs = stack.pop<Value.Integer>()
                     stack.push(lhs - rhs)
                 }
+                OpCode.Multiply -> {
+                    val rhs = stack.pop<Value.Integer>()
+                    val lhs = stack.pop<Value.Integer>()
+                    stack.push(lhs * rhs)
+                }
+                OpCode.Divide -> {
+                    val rhs = stack.pop<Value.Integer>()
+                    val lhs = stack.pop<Value.Integer>()
+                    stack.push(lhs / rhs)
+                }
                 OpCode.Equal -> {
                     val rhs = stack.pop<Value>()
                     val lhs = stack.pop<Value>()

@@ -57,6 +57,8 @@ class Lexer(private val source: String, private val file: String = "<unknown>") 
             ch == '"'       -> readString()
             readIf('+')     -> Operator.Plus
             readIf('-')     -> Operator.Minus
+            readIf('*')     -> Operator.Multiply
+            readIf('/')     -> Operator.Divide
             readIf('(')     -> Punctuation.LeftParen
             readIf(')')     -> Punctuation.RightParen
             readIf('{')     -> Punctuation.LeftBrace

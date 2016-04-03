@@ -12,6 +12,8 @@ sealed class OpCode {
     object Not : OpCode()
     object Add : OpCode()
     object Subtract : OpCode()
+    object Multiply : OpCode()
+    object Divide : OpCode()
     object Equal : OpCode()
     object ConcatString : OpCode()
     object Pop : OpCode()

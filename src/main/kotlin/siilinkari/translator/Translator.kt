@@ -106,6 +106,8 @@ private class Translator {
         when (this) {
             is TypedExpression.Binary.Plus         -> code += OpCode.Add
             is TypedExpression.Binary.Minus        -> code += OpCode.Subtract
+            is TypedExpression.Binary.Multiply     -> code += OpCode.Multiply
+            is TypedExpression.Binary.Divide       -> code += OpCode.Divide
             is TypedExpression.Binary.Equals       -> code += OpCode.Equal
             is TypedExpression.Binary.ConcatString -> code += OpCode.ConcatString
             else                                   -> error("unknown expression: $this")

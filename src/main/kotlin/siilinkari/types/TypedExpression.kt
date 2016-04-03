@@ -43,6 +43,12 @@ sealed class TypedExpression(val type: Type) {
         /** Numeric subtraction */
         class Minus(lhs: TypedExpression, rhs: TypedExpression, type: Type) : Binary(lhs, rhs, type)
 
+        /** Numeric multiplication */
+        class Multiply(lhs: TypedExpression, rhs: TypedExpression, type: Type) : Binary(lhs, rhs, type)
+
+        /** Numeric division */
+        class Divide(lhs: TypedExpression, rhs: TypedExpression, type: Type) : Binary(lhs, rhs, type)
+
         /** Equality comparison */
         class Equals(lhs: TypedExpression, rhs: TypedExpression) : Binary(lhs, rhs, Type.Boolean)
 

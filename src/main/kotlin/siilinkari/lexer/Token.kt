@@ -57,6 +57,8 @@ sealed class Token {
 
         object Plus : Operator("+")
         object Minus : Operator("-")
+        object Multiply : Operator("*")
+        object Divide : Operator("/")
         object EqualEqual : Operator("==")
         object NotEqual : Operator("!=")
         object Not : Operator("!")

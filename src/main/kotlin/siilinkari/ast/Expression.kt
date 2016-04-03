@@ -49,6 +49,12 @@ sealed class Expression(val location: SourceLocation) {
         /** lhs - rhs */
         class Minus(lhs: Expression, rhs: Expression, location: SourceLocation) : Binary(lhs, rhs, location)
 
+        /** lhs * rhs */
+        class Multiply(lhs: Expression, rhs: Expression, location: SourceLocation) : Binary(lhs, rhs, location)
+
+        /** lhs / rhs */
+        class Divide(lhs: Expression, rhs: Expression, location: SourceLocation) : Binary(lhs, rhs, location)
+
         /** lhs == rhs */
         class Equals(lhs: Expression, rhs: Expression, location: SourceLocation) : Binary(lhs, rhs, location)
 

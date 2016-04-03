@@ -65,6 +65,7 @@ sealed class Value {
         operator fun plus(other: Integer) = Integer(value + other.value)
         operator fun minus(other: Integer) = Integer(value - other.value)
         operator fun times(other: Integer) = Integer(value * other.value)
+        operator fun div(other: Integer) = Integer(value / other.value)
     }
 
     abstract class Function(val signature: Type.Function) : Value() {

@@ -71,6 +71,7 @@ class ParserTest {
         assertParseExpression("a + (b == c) + d", "[Plus [Plus [Ref a] [Equals [Ref b] [Ref c]]] [Ref d]]")
         assertParseExpression("!x + y", "[Plus [Not [Ref x]] [Ref y]]")
         assertParseExpression("!(x + y)", "[Not [Plus [Ref x] [Ref y]]]")
+        assertParseExpression("a + b * c + d", "[Plus [Plus [Ref a] [Multiply [Ref b] [Ref c]]] [Ref d]]")
     }
 
     @Test
