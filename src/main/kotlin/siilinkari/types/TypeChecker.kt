@@ -9,7 +9,7 @@ import siilinkari.lexer.SourceLocation
 import siilinkari.objects.Value
 
 /**
- * Type-checker statements and expressions.
+ * Type-checker for expressions.
  *
  * Type-checker walks through the syntax tree, maintaining a [StaticEnvironment] mapping
  * identifiers to their types and validates that all types agree. If type-checking
@@ -17,26 +17,7 @@ import siilinkari.objects.Value
  * expression is annotated with [Type]. If the checking fails, it will throw a
  * [TypeCheckException].
  */
-class TypeChecker(val environment: StaticEnvironment) {
-
-    /**
-     * Type-check a [Statement].
-     *
-     * @throws TypeCheckException
-     */
-    fun typeCheck(stmt: Statement): TypedStatement =
-        stmt.typeCheck(environment)
-
-    /**
-     * Type-check an [Expression].
-     *
-     * @throws TypeCheckException
-     */
-    fun typeCheck(stmt: Expression): TypedExpression =
-        stmt.typeCheck(environment)
-}
-
-private fun Expression.typeCheck(env: StaticEnvironment): TypedExpression = when (this) {
+fun Expression.typeCheck(env: StaticEnvironment): TypedExpression = when (this) {
     is Expression.Lit    -> TypedExpression.Lit(value, value.type)
     is Expression.Ref    -> TypedExpression.Ref(env.lookupBinding(name, location))
     is Expression.Not    -> TypedExpression.Not(exp.typeCheckExpected(Type.Boolean, env))
@@ -120,7 +101,7 @@ private fun TypedExpression.expectAssignableTo(expectedType: Type, location: Sou
 private fun Expression.typeCheckExpected(expectedType: Type, env: StaticEnvironment): TypedExpression =
     typeCheck(env).expectAssignableTo(expectedType, location)
 
-private fun Statement.typeCheck(env: StaticEnvironment): TypedStatement = when (this) {
+fun Statement.typeCheck(env: StaticEnvironment): TypedStatement = when (this) {
     is Statement.Exp ->
         TypedStatement.Exp(expression.typeCheck(env))
     is Statement.Assign -> {

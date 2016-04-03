@@ -7,9 +7,9 @@ import siilinkari.parser.parseExpression
 import siilinkari.parser.parseStatement
 import siilinkari.translator.translate
 import siilinkari.types.Type
-import siilinkari.types.TypeChecker
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
+import siilinkari.types.typeCheck
 import java.util.*
 
 /**
@@ -20,7 +20,6 @@ import java.util.*
 class Evaluator {
     private val environment = GlobalEnvironment()
     private val typeEnvironment = GlobalStaticEnvironment()
-    private val typeChecker = TypeChecker(typeEnvironment)
 
     /**
      * Binds a global name to given value.
@@ -52,7 +51,7 @@ class Evaluator {
      */
     fun evaluateExpression(code: String): Value {
         val exp = parseExpression(code)
-        val typedExp = typeChecker.typeCheck(exp)
+        val typedExp = exp.typeCheck(typeEnvironment)
         val translated = typedExp.translate()
 
         return evaluateSegment(translated)
@@ -69,7 +68,7 @@ class Evaluator {
      */
     private fun translate(code: String): CodeSegment {
         val stmt = parseStatement(code)
-        val typedStmt = typeChecker.typeCheck(stmt)
+        val typedStmt = stmt.typeCheck(typeEnvironment)
 
         val translated = if (typedStmt is TypedStatement.Exp) {
             typedStmt.expression.translate()
@@ -93,7 +92,7 @@ class Evaluator {
             scope.bind(name, type)
         }
 
-        val typedExp = TypeChecker(scope).typeCheck(exp)
+        val typedExp = exp.typeCheck(scope)
         val segment = typedExp.translate()
 
         return object : Value.Function(Type.Function(args.map { it.second }, typedExp.type)) {

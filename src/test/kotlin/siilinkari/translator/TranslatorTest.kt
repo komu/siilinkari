@@ -3,7 +3,7 @@ package siilinkari.translator
 import org.junit.Test
 import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.parser.parseStatement
-import siilinkari.types.TypeChecker
+import siilinkari.types.typeCheck
 import kotlin.test.assertEquals
 
 class TranslatorTest {
@@ -41,7 +41,7 @@ class TranslatorTest {
     }
 
     private fun translateStatement(code: String): String {
-        val typed = TypeChecker(GlobalStaticEnvironment()).typeCheck(parseStatement(code))
+        val typed = parseStatement(code).typeCheck(GlobalStaticEnvironment())
 
         return typed.translate().toString()
     }

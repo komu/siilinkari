@@ -10,7 +10,6 @@ import kotlin.test.assertFailsWith
 class TypeCheckerTest {
 
     val env = GlobalStaticEnvironment()
-    val typeChecker = TypeChecker(env)
 
     @Test
     fun literalTypes() {
@@ -137,9 +136,9 @@ class TypeCheckerTest {
     }
 
     private fun typeCheckExpression(code: String) =
-        typeChecker.typeCheck(parseExpression(code))
+        parseExpression(code).typeCheck(env)
 
     private fun typeCheckStatement(code: String) =
-        typeChecker.typeCheck(parseStatement(code))
+        parseStatement(code).typeCheck(env)
 
 }
