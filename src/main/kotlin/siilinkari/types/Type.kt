@@ -8,6 +8,7 @@ sealed class Type {
     object String : Type()
     object Int : Type()
     object Boolean : Type()
+    object Unit : Type()
 
     override fun toString() = javaClass.simpleName
 

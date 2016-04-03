@@ -31,9 +31,9 @@ class Evaluator {
 
     /**
      * Evaluates statement of code. If the statement is an expression
-     * statement, returns its value. Otherwise returns `null`.
+     * statement, returns its value. Otherwise returns [Value.Unit].
      */
-    fun evaluateStatement(code: String): Value? {
+    fun evaluateStatement(code: String): Value {
         val translated = translate(code)
 
         return evaluateSegment(translated)
@@ -47,7 +47,7 @@ class Evaluator {
         val typedExp = typeChecker.typeCheck(exp)
         val translated = typedExp.translate()
 
-        return evaluateSegment(translated)!!
+        return evaluateSegment(translated)
     }
 
     /**
@@ -74,9 +74,9 @@ class Evaluator {
     /**
      * Evaluates given code segment. If the segment leaves a value on the stack
      * (if it was compiled from an expression instead of statement), returns the
-     * value. Otherwise returns `null`.
+     * value. Otherwise returns [Value.Unit].
      */
-    private fun evaluateSegment(code: CodeSegment): Value? {
+    private fun evaluateSegment(code: CodeSegment): Value {
         val stack = ValueStack()
         var pc = 0
         val end = code.lastAddress + 1
@@ -143,6 +143,6 @@ class Evaluator {
             }
         }
 
-        return stack.topOrNull()
+        return stack.topOrNull() ?: Value.Unit
     }
 }

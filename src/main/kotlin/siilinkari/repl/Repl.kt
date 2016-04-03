@@ -1,6 +1,7 @@
 package siilinkari.repl
 
 import siilinkari.lexer.SyntaxErrorException
+import siilinkari.objects.Value
 import siilinkari.types.TypeCheckException
 import siilinkari.vm.Evaluator
 import java.util.*
@@ -29,7 +30,7 @@ fun main(args: Array<String>) {
                 println(evaluator.dump(line.substringAfter(":dump ")))
             } else {
                 val result = evaluator.evaluateStatement(line)
-                if (result != null)
+                if (result != Value.Unit)
                     println(result.repr())
             }
         } catch (e: SyntaxErrorException) {

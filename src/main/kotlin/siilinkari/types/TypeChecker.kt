@@ -156,6 +156,7 @@ private fun StaticEnvironment.bindType(name: String, type: Type, location: Sourc
  */
 val Value.type: Type
     get() = when (this) {
+        Value.Unit       -> Type.Unit
         is Value.String  -> Type.String
         is Value.Bool    -> Type.Boolean
         is Value.Integer -> Type.Int

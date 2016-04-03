@@ -20,6 +20,11 @@ sealed class Value {
     open fun repr(): kotlin.String = toString()
 
     /**
+     * Unit value.
+     */
+    object Unit : Value()
+
+    /**
      * Strings.
      */
     class String(val value: kotlin.String) : Value()  {
