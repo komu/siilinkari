@@ -13,12 +13,6 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>, val fra
      */
     operator fun get(address: Int): OpCode = opCodes[address]
 
-    /**
-     * Returns the last valid address or -1, if there are no opcodes.
-     */
-    val lastAddress: Int
-        get() = opCodes.lastIndex
-
     override fun toString(): String =
         opCodes.mapIndexed { i, op -> "$i $op" }.joinToString("\n")
 

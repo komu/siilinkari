@@ -44,6 +44,7 @@ class Evaluator {
         val translated = translate(code)
 
         evaluateSegment(translated)
+
         return stack.topOrNull() ?: Value.Unit
     }
 
@@ -55,6 +56,7 @@ class Evaluator {
         val typedExp = exp.typeCheck(typeEnvironment)
         val translated = CodeSegment.Builder()
         typedExp.translateTo(translated)
+        translated += OpCode.Ret
 
         evaluateSegment(translated.build())
         return stack.topOrNull() ?: Value.Unit
@@ -79,6 +81,7 @@ class Evaluator {
         } else {
             typedStmt.translateTo(translated)
         }
+        translated += OpCode.Ret
         return translated.build()
     }
 
@@ -102,6 +105,7 @@ class Evaluator {
         val typedExp = exp.typeCheck(scope)
 
         typedExp.translateTo(codeSegment)
+        codeSegment += OpCode.Ret
 
         val argTypes = args.map { it.second }
         val signature = Type.Function(argTypes, typedExp.type)
@@ -115,11 +119,12 @@ class Evaluator {
     private fun evaluateSegment(code: CodeSegment) {
         val frame = Frame(code.frameSize)
         var pc = 0
-        val end = code.lastAddress + 1
 
-        while (pc != end) {
+        while (true) {
             val op = code[pc++]
             when (op) {
+                OpCode.Ret ->
+                    return
                 OpCode.Pop ->
                     stack.pop<Value>()
                 OpCode.Not ->
