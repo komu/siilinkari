@@ -18,17 +18,16 @@ import java.util.*
  * @see OpCode
  */
 class Evaluator {
-    private val environment = GlobalEnvironment()
-    private val typeEnvironment = GlobalStaticEnvironment()
-    private val stack = ValueStack()
+    private val data = DataSegment()
+    private val globalTypeEnvironment = GlobalStaticEnvironment()
     private val globalCode = CodeSegment.Builder()
 
     /**
      * Binds a global name to given value.
      */
     fun bind(name: String, value: Value) {
-        val binding = typeEnvironment.bind(name, value.type)
-        environment[binding.index] = value
+        val binding = globalTypeEnvironment.bind(name, value.type)
+        data[binding.index] = value
     }
 
     /**
@@ -45,9 +44,7 @@ class Evaluator {
     fun evaluateStatement(code: String): Value {
         val translated = translate(code)
 
-        evaluateSegment(translated)
-
-        return stack.topOrNull() ?: Value.Unit
+        return evaluateSegment(translated)
     }
 
     /**
@@ -55,13 +52,12 @@ class Evaluator {
      */
     fun evaluateExpression(code: String): Value {
         val exp = parseExpression(code)
-        val typedExp = exp.typeCheck(typeEnvironment)
+        val typedExp = exp.typeCheck(globalTypeEnvironment)
         val translated = CodeSegment.Builder()
         typedExp.translateTo(translated)
         translated += OpCode.Ret
 
-        evaluateSegment(translated.build())
-        return stack.topOrNull() ?: Value.Unit
+        return evaluateSegment(translated)
     }
 
     /**
@@ -73,9 +69,9 @@ class Evaluator {
     /**
      * Translates code to opcodes.
      */
-    private fun translate(code: String): CodeSegment {
+    private fun translate(code: String): CodeSegment.Builder {
         val stmt = parseStatement(code)
-        val typedStmt = stmt.typeCheck(typeEnvironment)
+        val typedStmt = stmt.typeCheck(globalTypeEnvironment)
 
         val translated = CodeSegment.Builder()
         if (typedStmt is TypedStatement.Exp) {
@@ -84,7 +80,7 @@ class Evaluator {
             typedStmt.translateTo(translated)
         }
         translated += OpCode.Ret
-        return translated.build()
+        return translated
     }
 
     /**
@@ -97,7 +93,7 @@ class Evaluator {
         // bindings for all arguments. Create a new scope and at the same time
         // create prepare a function prologue that pops all arguments from the
         // stack into local variables.
-        val scope = typeEnvironment.newScope()
+        val scope = globalTypeEnvironment.newScope()
         val codeSegment = CodeSegment.Builder()
         for ((name, type) in args) {
             val binding = scope.bind(name, type)
@@ -107,38 +103,49 @@ class Evaluator {
         val typedExp = exp.typeCheck(scope)
 
         typedExp.translateTo(codeSegment)
-        codeSegment += OpCode.Ret
 
         val argTypes = args.map { it.second }
         val signature = Type.Function(argTypes, typedExp.type)
 
-        val segment = codeSegment.build()
-        val address = globalCode.addRelocated(segment)
+        val finalCode = CodeSegment.Builder()
+        val frameSize = codeSegment.frameSize
+        finalCode += OpCode.Enter(frameSize)
+        finalCode.addRelocated(codeSegment)
+        finalCode += OpCode.Leave(frameSize)
+        finalCode += OpCode.Ret
 
-        return Value.Function.Compound(signature, address, segment.frameSize)
+        val address = globalCode.addRelocated(finalCode)
+
+        return Value.Function.Compound(signature, address)
     }
 
     /**
      * Evaluates given code segment.
      */
-    private fun evaluateSegment(segment: CodeSegment) {
-        val codeBuilder = CodeSegment.Builder()
-        codeBuilder.addRelocated(globalCode.build())
-        var pc = codeBuilder.addRelocated(segment)
+    private fun evaluateSegment(segment: CodeSegment.Builder): Value {
+        // Relocate code to be evaluated after the global code into a single segment.
+        val codeBuilder = CodeSegment.Builder(globalCode)
+        val startAddress = codeBuilder.addRelocated(segment)
         val code = codeBuilder.build()
-        var frame = Frame(segment.frameSize)
-        val pcStack = ArrayList<Int>()
-        val frameStack = ArrayList<Frame>()
 
-        while (true) {
+        val stack = ValueStack()
+        var framePointer = 0
+        var pc = startAddress
+        val pcStack = ArrayList<Int>()
+
+        fun Binding.address(): Int = when (this) {
+            is Binding.Local  -> framePointer + index
+            is Binding.Global -> index
+        }
+
+        evalLoop@while (true) {
             val op = code[pc++]
             when (op) {
-                OpCode.Ret -> {
+                OpCode.Ret ->
                     if (pcStack.isEmpty())
-                        return
-                    pc = pcStack.removeAt(pcStack.lastIndex)
-                    frame = frameStack.removeAt(frameStack.lastIndex)
-                }
+                        break@evalLoop
+                    else
+                        pc = pcStack.removeAt(pcStack.lastIndex)
                 OpCode.Pop ->
                     stack.pop<Value>()
                 OpCode.Not ->
@@ -176,18 +183,9 @@ class Evaluator {
                 is OpCode.Push ->
                     stack.push(op.value)
                 is OpCode.Load ->
-                    stack.push(when (op.binding) {
-                        is Binding.Local -> frame[op.binding.index]
-                        is Binding.Global -> environment[op.binding.index]
-                    })
-                is OpCode.Store -> {
-                    val value = stack.pop<Value>()
-                    when (op.binding) {
-                        is Binding.Local -> frame[op.binding.index] = value
-                        is Binding.Global -> environment[op.binding.index] = value
-                        else -> error("unknown binding ${op.binding}")
-                    }
-                }
+                    stack.push(data[op.binding.address()])
+                is OpCode.Store ->
+                    data[op.binding.address()] = stack.pop<Value>()
                 is OpCode.Jump ->
                     pc = op.label.address
                 is OpCode.JumpIfFalse ->
@@ -199,17 +197,21 @@ class Evaluator {
                     when (func) {
                         is Value.Function.Compound -> {
                             pcStack.add(pc)
-                            frameStack.add(frame)
                             pc = func.address
-                            frame = Frame(func.frameSize)
                         }
                         is Value.Function.Native ->
                             stack.push(func(stack.popValues(func.argumentCount)))
                     }
                 }
+                is OpCode.Enter ->
+                    framePointer += op.frameSize
+                is OpCode.Leave ->
+                    framePointer -= op.frameSize
                 else ->
                     error("unknown opcode: $op")
             }
         }
+
+        return stack.topOrNull() ?: Value.Unit
     }
 }

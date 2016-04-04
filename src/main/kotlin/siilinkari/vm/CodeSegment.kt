@@ -6,7 +6,7 @@ import java.util.*
 /**
  * A serial of opcodes, addressable with indices 0..lastValidAddress.
  */
-class CodeSegment private constructor(private val opCodes: List<OpCode>, val frameSize: Int) {
+class CodeSegment private constructor(private val opCodes: List<OpCode>) {
 
     /**
      * Returns [OpCode] with given address.
@@ -14,13 +14,17 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>, val fra
     operator fun get(address: Int): OpCode = opCodes[address]
 
     override fun toString(): String =
-        opCodes.mapIndexed { i, op -> "$i $op" }.joinToString("\n")
+        opCodes.asSequence().mapIndexed { i, op -> "$i $op" }.joinToString("\n")
 
     /**
      * Builder for building opcodes.
      */
-    class Builder {
+    class Builder() {
         private val opCodes = ArrayList<OpCode>()
+
+        constructor(builder: Builder): this() {
+            addRelocated(builder)
+        }
 
         /**
          * Adds a new opcode.
@@ -36,7 +40,11 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>, val fra
             label.address = opCodes.size
         }
 
-        fun addRelocated(segment: CodeSegment): Int {
+        /**
+         * Adds instructions of [segment] to this builder, relocating all labels
+         * as needed.
+         */
+        fun addRelocated(segment: CodeSegment.Builder): Int {
             val address = opCodes.size
 
             for (op in segment.opCodes)
@@ -46,12 +54,17 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>, val fra
         }
 
         /**
+         * Calculates the frame size needed by opcodes in this segment.
+         */
+        val frameSize: Int
+            get() = opCodes.localBindings().maxBy { it.index }?.index?.let { it + 1 } ?: 0
+
+        /**
          * Builds the segment.
          */
         fun build(): CodeSegment {
-            val maxBindingIndex = opCodes.localBindings().maxBy { it.index  }?.index ?: -1
             assert(opCodes.all { it.isInitialized }) { "uninitialized opcodes"}
-            return CodeSegment(opCodes, maxBindingIndex + 1)
+            return CodeSegment(opCodes)
         }
     }
 }

@@ -69,19 +69,19 @@ sealed class Value {
     }
 
     sealed class Function(val signature: Type.Function) : Value() {
-        val argumentCount: Int
-            get() = signature.argumentTypes.size
 
         /**
          * Function whose implementation is byte-code.
          */
-        class Compound(signature: Type.Function, val address: Int, val frameSize: Int) : Function(signature)
+        class Compound(signature: Type.Function, val address: Int) : Function(signature)
 
         /**
          * Function implemented as native function.
          */
         class Native(signature: Type.Function, private val func: (List<Value>) -> Value) : Value.Function(signature) {
             operator fun invoke(args: List<Value>): Value = func(args)
+            val argumentCount: Int
+                get() = signature.argumentTypes.size
         }
     }
 }

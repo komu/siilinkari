@@ -49,4 +49,18 @@ sealed class OpCode {
         override fun toString() = "JumpIfFalse $label"
         override fun relocate(address: Int) = JumpIfFalse(label.relocate(address))
     }
+
+    /**
+     * Enter a stack frame: increase frame-pointer by [frameSize].
+     */
+    class Enter(val frameSize: Int) : OpCode() {
+        override fun toString() = "Enter $frameSize"
+    }
+
+    /**
+     * Leave a stack frame: decrease frame-pointer by [frameSize].
+     */
+    class Leave(val frameSize: Int) : OpCode() {
+        override fun toString() = "Leave $frameSize"
+    }
 }

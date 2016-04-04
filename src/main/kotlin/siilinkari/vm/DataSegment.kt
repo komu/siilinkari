@@ -4,9 +4,12 @@ import siilinkari.objects.Value
 import java.lang.Math.max
 
 /**
- * Runtime environment mapping global variables to their values.
+ * Integer-addressable segment of [Value]s.
+ *
+ * The segment grows as needed because it is used for things for which we can't determine
+ * the original size. (For example the call stack of the system.)
  */
-class GlobalEnvironment {
+class DataSegment {
 
     private var bindings = arrayOfNulls<Value>(1024)
 
@@ -22,6 +25,7 @@ class GlobalEnvironment {
      * Returns the value bound to given variable.
      */
     operator fun get(index: Int): Value =
+        // We don't need to call ensureCapacity here because we can never read uninitialized values
         bindings[index]!!
 
     private fun ensureCapacity(capacity: Int) {
