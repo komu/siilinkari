@@ -10,7 +10,6 @@ import siilinkari.types.Type
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
 import siilinkari.types.typeCheck
-import java.util.*
 
 /**
  * Evaluator for opcodes.
@@ -126,12 +125,12 @@ class Evaluator {
         // Relocate code to be evaluated after the global code into a single segment.
         val codeBuilder = CodeSegment.Builder(globalCode)
         val startAddress = codeBuilder.addRelocated(segment)
+        val topFramePointer = codeBuilder.frameSize
         val code = codeBuilder.build()
 
         val stack = ValueStack()
-        var framePointer = codeBuilder.frameSize
+        var framePointer = topFramePointer
         var pc = startAddress
-        val pcStack = ArrayList<Int>()
 
         fun Binding.address(): Int = when (this) {
             is Binding.Local  -> framePointer - index - 1
@@ -141,7 +140,6 @@ class Evaluator {
         evalLoop@while (true) {
             val op = code[pc++]
             when (op) {
-                OpCode.Ret              -> if (pcStack.isEmpty()) break@evalLoop else pc = pcStack.removeAt(pcStack.lastIndex)
                 OpCode.Pop              -> stack.pop<Value>()
                 OpCode.Not              -> stack.push(!stack.pop<Value.Bool>())
                 OpCode.Add              -> stack.evalBinary<Value.Integer, Value.Integer> { l, r -> l + r }
@@ -162,12 +160,18 @@ class Evaluator {
 
                     when (func) {
                         is Value.Function.Compound -> {
-                            pcStack.add(pc)
+                            data[framePointer++] = Value.Integer(pc)
                             pc = func.address
                         }
                         is Value.Function.Native ->
                             stack.push(func(stack.popValues(func.argumentCount)))
                     }
+                }
+                OpCode.Ret -> {
+                    if (framePointer == topFramePointer)
+                        break@evalLoop
+                    else
+                        pc = (data[--framePointer] as Value.Integer).value
                 }
                 else ->
                     error("unknown opcode: $op")
