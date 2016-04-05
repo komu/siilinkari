@@ -66,6 +66,9 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>) {
             assert(opCodes.all { it.isInitialized }) { "uninitialized opcodes"}
             return CodeSegment(opCodes)
         }
+
+        override fun toString(): String =
+            opCodes.asSequence().mapIndexed { i, op -> "$i $op" }.joinToString("\n")
     }
 }
 
