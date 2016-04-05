@@ -19,4 +19,8 @@ sealed class Binding(val name: String, val type: Type, val index: Int) {
     class Local(name: String, type: Type, index: Int) : Binding(name, type, index) {
         override fun toString() = "[Local $index ($name)]"
     }
+
+    class Argument(name: String, type: Type, index: Int) : Binding(name, type, index) {
+        override fun toString() = "[Argument $index ($name)]"
+    }
 }

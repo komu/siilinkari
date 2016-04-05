@@ -8,7 +8,7 @@ import java.util.*
  */
 abstract class StaticEnvironment(private val parent: StaticEnvironment?) {
 
-    private val bindings = HashMap<String, Binding>()
+    protected val bindings = HashMap<String, Binding>()
 
     /**
      * Returns the binding of given variable.
@@ -53,6 +53,7 @@ class GlobalStaticEnvironment : StaticEnvironment(null) {
     private var bindingIndexSequence = 0
     override fun newBinding(name: String, type: Type): Binding.Global = Binding.Global(name, type, bindingIndexSequence++)
     override fun newScope(): StaticEnvironment = LocalFrameEnvironment(this)
+    fun newScope(args: List<Pair<String,Type>>): StaticEnvironment = LocalFrameEnvironment(this, args)
 }
 
 /**
@@ -63,6 +64,13 @@ class GlobalStaticEnvironment : StaticEnvironment(null) {
  */
 private class LocalFrameEnvironment(parent: StaticEnvironment) : StaticEnvironment(parent) {
     private var bindingIndexSequence = 0
+
+    constructor(parent: StaticEnvironment, args: List<Pair<String,Type>>): this(parent) {
+        args.forEachIndexed { index, pair ->
+            val (name, type) = pair
+            bindings[name] = Binding.Argument(name, type, index)
+        }
+    }
 
     public override fun newBinding(name: String, type: Type) = Binding.Local(name, type, bindingIndexSequence++)
     override fun newScope(): StaticEnvironment = LocalFrameChildScope(this, this)

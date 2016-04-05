@@ -36,7 +36,7 @@ Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.
 9 Push " worked!"
 10 ConcatString
 11 Store [Global 3 (s)]
-12 Ret
+12 Quit
 > exit
 Thank you for visiting Siilinkari, have a nice day!
 ```

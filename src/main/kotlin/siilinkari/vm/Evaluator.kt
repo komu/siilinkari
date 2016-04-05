@@ -10,7 +10,6 @@ import siilinkari.types.Type
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
 import siilinkari.types.typeCheck
-import java.util.*
 
 /**
  * Evaluator for opcodes.
@@ -55,7 +54,7 @@ class Evaluator {
         val typedExp = exp.typeCheck(globalTypeEnvironment)
         val translated = CodeSegment.Builder()
         typedExp.translateTo(translated)
-        translated += OpCode.Ret
+        translated += OpCode.Quit
 
         return evaluateSegment(translated)
     }
@@ -79,7 +78,7 @@ class Evaluator {
         } else {
             typedStmt.translateTo(translated)
         }
-        translated += OpCode.Ret
+        translated += OpCode.Quit
         return translated
     }
 
@@ -87,31 +86,18 @@ class Evaluator {
      * Creates a callable function from given expression.
      */
     private fun createFunctionFromExpression(args: List<Pair<String, Type>>, code: String): Value.Function {
-        val exp = parseExpression(code)
+        val typedExp = parseExpression(code).typeCheck(globalTypeEnvironment.newScope(args))
 
-        // The function body needs to be analyzed in a new scope that contains
-        // bindings for all arguments. Create a new scope and at the same time
-        // create prepare a function prologue that pops all arguments from the
-        // stack into local variables.
-        val scope = globalTypeEnvironment.newScope()
         val codeSegment = CodeSegment.Builder()
-        for ((name, type) in args) {
-            val binding = scope.bind(name, type)
-            codeSegment += OpCode.Store(binding)
-        }
-
-        val typedExp = exp.typeCheck(scope)
-
         typedExp.translateTo(codeSegment)
 
         val argTypes = args.map { it.second }
         val signature = Type.Function(argTypes, typedExp.type)
 
         val finalCode = CodeSegment.Builder()
-        val frameSize = codeSegment.frameSize
-        finalCode += OpCode.Enter(frameSize)
+        finalCode += OpCode.Enter(codeSegment.frameSize)
         finalCode.addRelocated(codeSegment)
-        finalCode += OpCode.Leave(frameSize)
+        finalCode += OpCode.Leave(argTypes.size)
         finalCode += OpCode.Ret
 
         val address = globalCode.addRelocated(finalCode)
@@ -126,12 +112,13 @@ class Evaluator {
         // Relocate code to be evaluated after the global code into a single segment.
         val codeBuilder = CodeSegment.Builder(globalCode)
         val startAddress = codeBuilder.addRelocated(segment)
-        val topFramePointer = codeBuilder.frameSize
         val code = codeBuilder.build()
+        val initialStackPointer = codeBuilder.frameSize
 
         val state = ThreadState()
-        state.fp = topFramePointer
         state.pc = startAddress
+        state.fp = 0
+        state.sp = initialStackPointer
 
         evalLoop@while (true) {
             val op = code[state.pc++]
@@ -147,87 +134,38 @@ class Evaluator {
                 is OpCode.Push          -> state.push(op.value)
                 is OpCode.Jump          -> state.pc = op.label.address
                 is OpCode.JumpIfFalse   -> if (!state.pop<Value.Bool>().value) state.pc = op.label.address
+                is OpCode.Enter         -> state.enterFrame(op.frameSize)
+                is OpCode.Leave         -> state.leaveFrame(op.paramCount)
                 is OpCode.Load          -> state.push(when (op.binding) {
-                    is Binding.Local  -> state.data[op.binding.index]
-                    is Binding.Global -> globalData[op.binding.index]
+                    is Binding.Local    -> state[op.binding.index]
+                    is Binding.Argument -> state.loadArgument(op.binding.index)
+                    is Binding.Global   -> globalData[op.binding.index]
                 })
                 is OpCode.Store         -> when (op.binding) {
-                    is Binding.Local  -> state.data[op.binding.index] = state.popValue()
-                    is Binding.Global -> globalData[op.binding.index] = state.popValue()
+                    is Binding.Local    -> state[op.binding.index] = state.popValue()
+                    is Binding.Global   -> globalData[op.binding.index] = state.popValue()
+                    is Binding.Argument -> error("can't store values to arguments")
                 }
-                is OpCode.Enter         -> state.fp += op.frameSize
-                is OpCode.Leave         -> state.fp -= op.frameSize
-                is OpCode.Call -> {
-                    val func = state.pop<Value.Function>()
-
-                    when (func) {
-                        is Value.Function.Compound -> {
-                            state.data[state.fp++] = Value.Pointer.Data(state.pc)
-                            state.pc = func.address
-                        }
-                        is Value.Function.Native ->
-                            state.push(func(state.popValues(func.argumentCount)))
-                    }
-                }
-                OpCode.Ret -> {
-                    if (state.fp == topFramePointer)
-                        break@evalLoop
-                    else
-                        state.pc = (state.data[--state.fp] as Value.Pointer.Data).value
-                }
-                else ->
-                    error("unknown opcode: $op")
+                is OpCode.Call          -> evalCall(state)
+                OpCode.Ret              -> state.pc = state.pop<Value.Pointer.Code>().value
+                OpCode.Quit             -> break@evalLoop
+                else                    -> error("unknown opcode: $op")
             }
         }
 
-        return state.topOrNull() ?: Value.Unit
+        return if (state.sp > initialStackPointer) state.popValue() else Value.Unit
     }
 
-    /**
-     * Encapsulates the state of a single thread of execution.
-     */
-    inner class ThreadState {
-        private val stack = ArrayList<Value>()
+    private fun evalCall(state: ThreadState) {
+        val func = state.pop<Value.Function>()
 
-        val data = DataSegment()
-
-        /** Program counter: the next instruction to be executed */
-        var pc = 0
-
-        /** Frame pointer */
-        var fp = 0
-
-        operator fun get(offset: Int): Value = data[translateAddress(offset)]
-
-        operator fun set(offset: Int, value: Value) = {
-            data[translateAddress(offset)] = value
-        }
-
-        private fun translateAddress(offset: Int): Int = fp - offset - 1
-
-        fun popValue(): Value = stack.removeAt(stack.lastIndex)
-
-        inline fun <reified T : Value> pop(): T = popValue() as T
-
-        fun push(value: Value) {
-            stack.add(value)
-        }
-
-        fun topOrNull(): Value? = stack.lastOrNull()
-
-        fun popValues(count: Int): List<Value> {
-            val removed = stack.subList(stack.size - count, stack.size)
-            val values = ArrayList<Value>(removed.asReversed())
-            removed.clear()
-            return values
-        }
-
-        override fun toString() = "  pc = $pc\n  fp = $fp\n  stack = ${stack.asReversed().joinToString(", ")}"
-
-        inline fun <reified L : Value, reified R : Value> evalBinary(op: (l: L, r: R) -> Value) {
-            val rhs = pop<R>()
-            val lhs = pop<L>()
-            push(op(lhs, rhs))
+        when (func) {
+            is Value.Function.Compound -> {
+                state.push(Value.Pointer.Code(state.pc))
+                state.pc = func.address
+            }
+            is Value.Function.Native ->
+                state.push(func(state.popValues(func.argumentCount)))
         }
     }
 }

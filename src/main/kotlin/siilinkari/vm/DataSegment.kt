@@ -34,4 +34,8 @@ class DataSegment {
             bindings = bindings.copyOf(newSize)
         }
     }
+
+    override fun toString(): String {
+        return bindings.asSequence().take(10).joinToString(", ", "[", "]")
+    }
 }

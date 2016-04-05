@@ -20,6 +20,7 @@ sealed class OpCode {
     object Pop : OpCode()
     object Call : OpCode()
     object Ret : OpCode()
+    object Quit : OpCode()
 
     class Push(val value: Value) : OpCode() {
         override fun toString() = "Push ${value.repr()}"
@@ -51,16 +52,22 @@ sealed class OpCode {
     }
 
     /**
-     * Enter a stack frame: increase frame-pointer by [frameSize].
+     * Enter a stack frame.
+     *
+     * Push current `fp`, set new `fp` to `sp` and calculate new `sp = fp + frameSize`.
      */
     class Enter(val frameSize: Int) : OpCode() {
         override fun toString() = "Enter $frameSize"
     }
 
     /**
-     * Leave a stack frame: decrease frame-pointer by [frameSize].
+     * Leaves a stack frame.
+     *
+     * Pop return value, restore `fp`, calculate new `sp` so that the arguments
+     * pushed to this function are popped and push result and return address to
+     * top of stack.
      */
-    class Leave(val frameSize: Int) : OpCode() {
-        override fun toString() = "Leave $frameSize"
+    class Leave(val paramCount: Int) : OpCode() {
+        override fun toString() = "Leave $paramCount"
     }
 }
