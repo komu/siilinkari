@@ -129,12 +129,12 @@ class Evaluator {
         val code = codeBuilder.build()
 
         val stack = ValueStack()
-        var framePointer = 0
+        var framePointer = codeBuilder.frameSize
         var pc = startAddress
         val pcStack = ArrayList<Int>()
 
         fun Binding.address(): Int = when (this) {
-            is Binding.Local  -> framePointer + index
+            is Binding.Local  -> framePointer - index - 1
             is Binding.Global -> index
         }
 
