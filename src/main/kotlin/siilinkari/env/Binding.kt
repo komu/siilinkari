@@ -12,6 +12,8 @@ import siilinkari.types.Type
  */
 sealed class Binding(val name: String, val type: Type, val index: Int) {
 
+    open val isAssignable = true
+
     class Global(name: String, type: Type, index: Int) : Binding(name, type, index) {
         override fun toString() = "[Global $index ($name)]"
     }
@@ -22,5 +24,6 @@ sealed class Binding(val name: String, val type: Type, val index: Int) {
 
     class Argument(name: String, type: Type, index: Int) : Binding(name, type, index) {
         override fun toString() = "[Argument $index ($name)]"
+        override val isAssignable = false
     }
 }

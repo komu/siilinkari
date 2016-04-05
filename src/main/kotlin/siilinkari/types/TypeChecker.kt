@@ -106,6 +106,8 @@ fun Statement.typeCheck(env: StaticEnvironment): TypedStatement = when (this) {
         TypedStatement.Exp(expression.typeCheck(env))
     is Statement.Assign -> {
         val binding = env.lookupBinding(variable, location)
+        if (!binding.isAssignable)
+            throw TypeCheckException("can't assign to ${binding.name}", location)
         val typedLhs = expression.typeCheckExpected(binding.type, env)
         TypedStatement.Assign(binding, typedLhs)
     }

@@ -2,6 +2,7 @@ package siilinkari.types
 
 import org.junit.Test
 import siilinkari.env.GlobalStaticEnvironment
+import siilinkari.env.StaticEnvironment
 import siilinkari.parser.parseExpression
 import siilinkari.parser.parseStatement
 import kotlin.test.assertEquals
@@ -9,7 +10,7 @@ import kotlin.test.assertFailsWith
 
 class TypeCheckerTest {
 
-    val env = GlobalStaticEnvironment()
+    var env: StaticEnvironment = GlobalStaticEnvironment()
 
     @Test
     fun literalTypes() {
@@ -117,6 +118,12 @@ class TypeCheckerTest {
     @Test
     fun unboundVariableType() {
         assertExpressionTypeCheckFails("s")
+    }
+
+    @Test
+    fun assigningToParameters() {
+        env = GlobalStaticEnvironment().newScope(listOf("foo" to Type.Int))
+        assertStatementTypeCheckFails("foo = 42;")
     }
 
     private fun assertExpressionTypeCheckFails(code: String) {
