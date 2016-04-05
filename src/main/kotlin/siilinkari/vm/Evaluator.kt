@@ -141,56 +141,22 @@ class Evaluator {
         evalLoop@while (true) {
             val op = code[pc++]
             when (op) {
-                OpCode.Ret ->
-                    if (pcStack.isEmpty())
-                        break@evalLoop
-                    else
-                        pc = pcStack.removeAt(pcStack.lastIndex)
-                OpCode.Pop ->
-                    stack.pop<Value>()
-                OpCode.Not ->
-                    stack.push(!stack.pop<Value.Bool>())
-                OpCode.Add -> {
-                    val rhs = stack.pop<Value.Integer>()
-                    val lhs = stack.pop<Value.Integer>()
-                    stack.push(lhs + rhs)
-                }
-                OpCode.Subtract -> {
-                    val rhs = stack.pop<Value.Integer>()
-                    val lhs = stack.pop<Value.Integer>()
-                    stack.push(lhs - rhs)
-                }
-                OpCode.Multiply -> {
-                    val rhs = stack.pop<Value.Integer>()
-                    val lhs = stack.pop<Value.Integer>()
-                    stack.push(lhs * rhs)
-                }
-                OpCode.Divide -> {
-                    val rhs = stack.pop<Value.Integer>()
-                    val lhs = stack.pop<Value.Integer>()
-                    stack.push(lhs / rhs)
-                }
-                OpCode.Equal -> {
-                    val rhs = stack.pop<Value>()
-                    val lhs = stack.pop<Value>()
-                    stack.push(Value.Bool(lhs == rhs))
-                }
-                OpCode.ConcatString -> {
-                    val rhs = stack.pop<Value>()
-                    val lhs = stack.pop<Value.String>()
-                    stack.push(lhs + rhs)
-                }
-                is OpCode.Push ->
-                    stack.push(op.value)
-                is OpCode.Load ->
-                    stack.push(data[op.binding.address()])
-                is OpCode.Store ->
-                    data[op.binding.address()] = stack.pop<Value>()
-                is OpCode.Jump ->
-                    pc = op.label.address
-                is OpCode.JumpIfFalse ->
-                    if (!stack.pop<Value.Bool>().value)
-                        pc = op.label.address
+                OpCode.Ret              -> if (pcStack.isEmpty()) break@evalLoop else pc = pcStack.removeAt(pcStack.lastIndex)
+                OpCode.Pop              -> stack.pop<Value>()
+                OpCode.Not              -> stack.push(!stack.pop<Value.Bool>())
+                OpCode.Add              -> stack.evalBinary<Value.Integer, Value.Integer> { l, r -> l + r }
+                OpCode.Subtract         -> stack.evalBinary<Value.Integer, Value.Integer> { l, r -> l - r }
+                OpCode.Multiply         -> stack.evalBinary<Value.Integer, Value.Integer> { l, r -> l * r }
+                OpCode.Divide           -> stack.evalBinary<Value.Integer, Value.Integer> { l, r -> l / r }
+                OpCode.Equal            -> stack.evalBinary<Value, Value> { l, r -> Value.Bool(l == r) }
+                OpCode.ConcatString     -> stack.evalBinary<Value.String, Value> { l, r -> l + r }
+                is OpCode.Push          -> stack.push(op.value)
+                is OpCode.Load          -> stack.push(data[op.binding.address()])
+                is OpCode.Store         -> data[op.binding.address()] = stack.pop<Value>()
+                is OpCode.Jump          -> pc = op.label.address
+                is OpCode.JumpIfFalse   -> if (!stack.pop<Value.Bool>().value) pc = op.label.address
+                is OpCode.Enter         -> framePointer += op.frameSize
+                is OpCode.Leave         -> framePointer -= op.frameSize
                 is OpCode.Call -> {
                     val func = stack.pop<Value.Function>()
 
@@ -203,10 +169,6 @@ class Evaluator {
                             stack.push(func(stack.popValues(func.argumentCount)))
                     }
                 }
-                is OpCode.Enter ->
-                    framePointer += op.frameSize
-                is OpCode.Leave ->
-                    framePointer -= op.frameSize
                 else ->
                     error("unknown opcode: $op")
             }
@@ -215,3 +177,10 @@ class Evaluator {
         return stack.topOrNull() ?: Value.Unit
     }
 }
+
+private inline fun <reified L : Value, reified R : Value> ValueStack.evalBinary(op: (l: L, r: R) -> Value) {
+    val rhs = pop<R>()
+    val lhs = pop<L>()
+    push(op(lhs, rhs))
+}
+
