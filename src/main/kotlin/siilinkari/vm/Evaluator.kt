@@ -10,6 +10,7 @@ import siilinkari.types.Type
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
 import siilinkari.types.typeCheck
+import java.util.*
 
 /**
  * Evaluator for opcodes.
@@ -17,7 +18,7 @@ import siilinkari.types.typeCheck
  * @see OpCode
  */
 class Evaluator {
-    private val data = DataSegment()
+    private val globalData = DataSegment()
     private val globalTypeEnvironment = GlobalStaticEnvironment()
     private val globalCode = CodeSegment.Builder()
 
@@ -26,7 +27,7 @@ class Evaluator {
      */
     fun bind(name: String, value: Value) {
         val binding = globalTypeEnvironment.bind(name, value.type)
-        data[binding.index] = value
+        globalData[binding.index] = value
     }
 
     /**
@@ -128,63 +129,105 @@ class Evaluator {
         val topFramePointer = codeBuilder.frameSize
         val code = codeBuilder.build()
 
-        val stack = ValueStack()
-        var framePointer = topFramePointer
-        var pc = startAddress
-
-        fun Binding.address(): Int = when (this) {
-            is Binding.Local  -> framePointer - index - 1
-            is Binding.Global -> index
-        }
+        val state = ThreadState()
+        state.fp = topFramePointer
+        state.pc = startAddress
 
         evalLoop@while (true) {
-            val op = code[pc++]
+            val op = code[state.pc++]
             when (op) {
-                OpCode.Pop              -> stack.pop<Value>()
-                OpCode.Not              -> stack.push(!stack.pop<Value.Bool>())
-                OpCode.Add              -> stack.evalBinary<Value.Integer, Value.Integer> { l, r -> l + r }
-                OpCode.Subtract         -> stack.evalBinary<Value.Integer, Value.Integer> { l, r -> l - r }
-                OpCode.Multiply         -> stack.evalBinary<Value.Integer, Value.Integer> { l, r -> l * r }
-                OpCode.Divide           -> stack.evalBinary<Value.Integer, Value.Integer> { l, r -> l / r }
-                OpCode.Equal            -> stack.evalBinary<Value, Value> { l, r -> Value.Bool(l == r) }
-                OpCode.ConcatString     -> stack.evalBinary<Value.String, Value> { l, r -> l + r }
-                is OpCode.Push          -> stack.push(op.value)
-                is OpCode.Load          -> stack.push(data[op.binding.address()])
-                is OpCode.Store         -> data[op.binding.address()] = stack.pop<Value>()
-                is OpCode.Jump          -> pc = op.label.address
-                is OpCode.JumpIfFalse   -> if (!stack.pop<Value.Bool>().value) pc = op.label.address
-                is OpCode.Enter         -> framePointer += op.frameSize
-                is OpCode.Leave         -> framePointer -= op.frameSize
+                OpCode.Pop              -> state.popValue()
+                OpCode.Not              -> state.push(!state.pop<Value.Bool>())
+                OpCode.Add              -> state.evalBinary<Value.Integer, Value.Integer> { l, r -> l + r }
+                OpCode.Subtract         -> state.evalBinary<Value.Integer, Value.Integer> { l, r -> l - r }
+                OpCode.Multiply         -> state.evalBinary<Value.Integer, Value.Integer> { l, r -> l * r }
+                OpCode.Divide           -> state.evalBinary<Value.Integer, Value.Integer> { l, r -> l / r }
+                OpCode.Equal            -> state.evalBinary<Value, Value> { l, r -> Value.Bool(l == r) }
+                OpCode.ConcatString     -> state.evalBinary<Value.String, Value> { l, r -> l + r }
+                is OpCode.Push          -> state.push(op.value)
+                is OpCode.Jump          -> state.pc = op.label.address
+                is OpCode.JumpIfFalse   -> if (!state.pop<Value.Bool>().value) state.pc = op.label.address
+                is OpCode.Load          -> state.push(when (op.binding) {
+                    is Binding.Local  -> state.data[op.binding.index]
+                    is Binding.Global -> globalData[op.binding.index]
+                })
+                is OpCode.Store         -> when (op.binding) {
+                    is Binding.Local  -> state.data[op.binding.index] = state.popValue()
+                    is Binding.Global -> globalData[op.binding.index] = state.popValue()
+                }
+                is OpCode.Enter         -> state.fp += op.frameSize
+                is OpCode.Leave         -> state.fp -= op.frameSize
                 is OpCode.Call -> {
-                    val func = stack.pop<Value.Function>()
+                    val func = state.pop<Value.Function>()
 
                     when (func) {
                         is Value.Function.Compound -> {
-                            data[framePointer++] = Value.Integer(pc)
-                            pc = func.address
+                            state.data[state.fp++] = Value.Pointer.Data(state.pc)
+                            state.pc = func.address
                         }
                         is Value.Function.Native ->
-                            stack.push(func(stack.popValues(func.argumentCount)))
+                            state.push(func(state.popValues(func.argumentCount)))
                     }
                 }
                 OpCode.Ret -> {
-                    if (framePointer == topFramePointer)
+                    if (state.fp == topFramePointer)
                         break@evalLoop
                     else
-                        pc = (data[--framePointer] as Value.Integer).value
+                        state.pc = (state.data[--state.fp] as Value.Pointer.Data).value
                 }
                 else ->
                     error("unknown opcode: $op")
             }
         }
 
-        return stack.topOrNull() ?: Value.Unit
+        return state.topOrNull() ?: Value.Unit
+    }
+
+    /**
+     * Encapsulates the state of a single thread of execution.
+     */
+    inner class ThreadState {
+        private val stack = ArrayList<Value>()
+
+        val data = DataSegment()
+
+        /** Program counter: the next instruction to be executed */
+        var pc = 0
+
+        /** Frame pointer */
+        var fp = 0
+
+        operator fun get(offset: Int): Value = data[translateAddress(offset)]
+
+        operator fun set(offset: Int, value: Value) = {
+            data[translateAddress(offset)] = value
+        }
+
+        private fun translateAddress(offset: Int): Int = fp - offset - 1
+
+        fun popValue(): Value = stack.removeAt(stack.lastIndex)
+
+        inline fun <reified T : Value> pop(): T = popValue() as T
+
+        fun push(value: Value) {
+            stack.add(value)
+        }
+
+        fun topOrNull(): Value? = stack.lastOrNull()
+
+        fun popValues(count: Int): List<Value> {
+            val removed = stack.subList(stack.size - count, stack.size)
+            val values = ArrayList<Value>(removed.asReversed())
+            removed.clear()
+            return values
+        }
+
+        override fun toString() = "  pc = $pc\n  fp = $fp\n  stack = ${stack.asReversed().joinToString(", ")}"
+
+        inline fun <reified L : Value, reified R : Value> evalBinary(op: (l: L, r: R) -> Value) {
+            val rhs = pop<R>()
+            val lhs = pop<L>()
+            push(op(lhs, rhs))
+        }
     }
 }
-
-private inline fun <reified L : Value, reified R : Value> ValueStack.evalBinary(op: (l: L, r: R) -> Value) {
-    val rhs = pop<R>()
-    val lhs = pop<L>()
-    push(op(lhs, rhs))
-}
-

@@ -73,7 +73,9 @@ sealed class Value {
         /**
          * Function whose implementation is byte-code.
          */
-        class Compound(signature: Type.Function, val address: Int) : Function(signature)
+        class Compound(signature: Type.Function, val address: Int) : Function(signature) {
+            override fun toString() = "Function(address=$address)"
+        }
 
         /**
          * Function implemented as native function.
@@ -82,6 +84,22 @@ sealed class Value {
             operator fun invoke(args: List<Value>): Value = func(args)
             val argumentCount: Int
                 get() = signature.argumentTypes.size
+            override fun toString() = "Function.Native"
+        }
+    }
+
+    sealed class Pointer(val value: Int) : Value() {
+
+        class Data(offset: Int) : Pointer(offset) {
+            override fun equals(other: Any?) = other is Data && value == other.value
+            override fun hashCode() = value
+            override fun toString() = "Pointer.Data($value)"
+        }
+
+        class Code(offset: Int) : Pointer(offset) {
+            override fun equals(other: Any?) = other is Code && value == other.value
+            override fun hashCode() = value
+            override fun toString() = "Pointer.Code($value)"
         }
     }
 }

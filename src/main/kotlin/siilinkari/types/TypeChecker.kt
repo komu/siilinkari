@@ -152,4 +152,5 @@ val Value.type: Type
         is Value.Bool    -> Type.Boolean
         is Value.Integer -> Type.Int
         is Value.Function -> signature
+        is Value.Pointer -> error("no type associated with internal pointers")
     }
