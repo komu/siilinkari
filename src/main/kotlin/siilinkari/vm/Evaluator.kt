@@ -1,6 +1,7 @@
 package siilinkari.vm
 
 import siilinkari.env.GlobalStaticEnvironment
+import siilinkari.lexer.SyntaxErrorException
 import siilinkari.objects.Value
 import siilinkari.optimizer.optimize
 import siilinkari.parser.parseExpression
@@ -35,6 +36,16 @@ class Evaluator {
      */
     fun bindFunction(name: String, args: List<Pair<String, Type>>, code: String) {
         bind(name, createFunctionFromExpression(args, code), mutable = false)
+    }
+
+    fun evaluateReplLine(code: String): Value {
+        try {
+            parseExpression(code)
+            return evaluateExpression(code)
+        } catch (e: SyntaxErrorException) {
+            evaluateStatement(code)
+            return Value.Unit
+        }
     }
 
     /**

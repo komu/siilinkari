@@ -2,6 +2,7 @@ package siilinkari.repl
 
 import jline.console.ConsoleReader
 import siilinkari.lexer.SyntaxErrorException
+import siilinkari.lexer.UnexpectedEndOfInputException
 import siilinkari.objects.Value
 import siilinkari.runtime.registerRuntimeFunctions
 import siilinkari.types.TypeCheckException
@@ -31,7 +32,7 @@ fun main(args: Array<String>) {
     println("Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.")
 
     while (true) {
-        var line = console.readLine("> ")?.trim() ?: break
+        var line = console.readLine(">>> ")?.trim() ?: break
 
         if (line == "") continue
         if (line == "exit") break
@@ -41,16 +42,21 @@ fun main(args: Array<String>) {
             continue
         }
 
-        if (!line.endsWith(';') && !line.endsWith("}"))
-            line += ';'
-
         try {
             if (line.startsWith(":dump ")) {
                 println(evaluator.dump(line.substringAfter(":dump ")))
             } else {
-                val result = evaluator.evaluateStatement(line)
-                if (result != Value.Unit)
-                    println(result.repr())
+                while (true) {
+                    try {
+                        val result = evaluator.evaluateReplLine(line)
+                        if (result != Value.Unit)
+                            println(result.repr())
+                        break
+                    } catch (e: UnexpectedEndOfInputException) {
+                        val newLine = console.readLine("... ") ?: break
+                        line = line + '\n' + newLine
+                    }
+                }
             }
         } catch (e: SyntaxErrorException) {
             println("Syntax error: ${e.errorMessage}")
