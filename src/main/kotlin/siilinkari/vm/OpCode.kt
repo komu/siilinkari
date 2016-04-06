@@ -17,6 +17,7 @@ sealed class OpCode {
     object LessThanOrEqual : OpCode()
     object ConcatString : OpCode()
     object Pop : OpCode()
+    object Dup : OpCode()
     object Call : OpCode()
     object Ret : OpCode()
     object Quit : OpCode()

@@ -19,6 +19,7 @@ sealed class IR {
     object LessThanOrEqual : IR()
     object ConcatString : IR()
     object Pop : IR()
+    object Dup : IR()
     object Call : IR()
 
     class Push(val value: Value) : IR() {

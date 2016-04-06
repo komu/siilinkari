@@ -66,6 +66,12 @@ class ThreadState {
         return stack[--sp]
     }
 
+    fun dup() {
+        val value = popValue()
+        push(value)
+        push(value)
+    }
+
     inline fun <reified T : Value> pop(): T = popValue() as T
 
     fun push(value: Value) {

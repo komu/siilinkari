@@ -130,6 +130,7 @@ class Evaluator {
                 println(op)
             when (op) {
                 OpCode.Pop              -> state.popValue()
+                OpCode.Dup              -> state.dup()
                 OpCode.Not              -> state.push(!state.pop<Value.Bool>())
                 OpCode.Add              -> state.evalBinary<Value.Integer, Value.Integer> { l, r -> l + r }
                 OpCode.Subtract         -> state.evalBinary<Value.Integer, Value.Integer> { l, r -> l - r }

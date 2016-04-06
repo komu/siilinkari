@@ -1,5 +1,6 @@
 package siilinkari.translator
 
+import siilinkari.optimizer.peepholeOptimize
 import siilinkari.translator.BasicBlock.BlockEnd
 import siilinkari.vm.CodeSegment
 import siilinkari.vm.OpCode
@@ -15,6 +16,9 @@ fun translateBasicBlocksTo(first: BasicBlock, ops: CodeSegment.Builder) {
 
     val blockAddresses = HashMap<BasicBlock, Int>(blocks.size)
     var address = ops.currentAddress
+
+    for (block in blocks)
+        block.peepholeOptimize()
 
     for (block in blocks) {
         blockAddresses[block] = address
@@ -71,6 +75,7 @@ private fun IR.translate(): OpCode = when (this) {
     IR.LessThanOrEqual  -> OpCode.LessThanOrEqual
     IR.ConcatString     -> OpCode.ConcatString
     IR.Pop              -> OpCode.Pop
+    IR.Dup              -> OpCode.Dup
     IR.Call             -> OpCode.Call
     is IR.Push          -> OpCode.Push(value)
     is IR.LoadLocal     -> OpCode.LoadLocal(index, name)
