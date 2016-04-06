@@ -27,7 +27,7 @@ Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.
 0 LoadGlobal 2 ; x
 1 Push 4
 2 Equal
-3 JumpIfFalse [Label 10]
+3 JumpIfFalse 10
 4 Push "It"
 5 StoreLocal 0 ; t
 6 LoadLocal 0 ; t
@@ -85,17 +85,16 @@ The evaluator consists of the following pipeline:
           |          optimization
           |  
           v          
-      IR opcodes                   siilinkari.translator.{IR, BasicBlock}
+      IR opcodes                   (same as above)
           |
           |
-          o--------- address       siilinkari.translator.TranslateIRToOpCodes
-          |          assignment
+          o------- IR translation  siilinkari.translator.TranslateIRToOpCodes
           |  
           v          
     stack vm opcodes               siilinkari.vm.{OpCode, CodeSegment}
           |
           |
-          o--------- evaluator     siilinkari.vm.{Evaluator, Environment}
+          o--------- evaluator     siilinkari.vm.{Evaluator, ThreadState, DataSegment}
           |
           v
         values                     siilinkari.objects.Value
@@ -116,9 +115,7 @@ If you want to play around, here are some ideas to get started:
 - Implement a pretty printer: it should take an AST and write it to output properly formatted.
 - Modify lexer and parser so that semicolons are not required at the end of statements.
 - Modify lexer and parser to support indentation based syntax.
-- Add AST -> AST rewrite step that does constant folding before evaluation starts.
 - Add support for higher order functions and lambdas.
-- Add peephole optimizer for generated opcodes.
 
 ## Want more?
 
