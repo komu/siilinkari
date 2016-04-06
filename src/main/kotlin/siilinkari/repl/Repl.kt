@@ -1,25 +1,26 @@
 package siilinkari.repl
 
+import jline.console.ConsoleReader
 import siilinkari.lexer.SyntaxErrorException
 import siilinkari.objects.Value
 import siilinkari.runtime.registerRuntimeFunctions
 import siilinkari.types.TypeCheckException
 import siilinkari.vm.Evaluator
-import java.util.*
 
 /**
  * Implementation of Read-Eval-Print loop.
  */
 fun main(args: Array<String>) {
 
-    val scanner = Scanner(System.`in`)
+    val console = ConsoleReader()
+
     val evaluator = Evaluator()
     registerRuntimeFunctions(evaluator)
 
     println("Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.")
 
     while (true) {
-        var line = scanner.nextLineWithPrompt("> ")?.trim() ?: break
+        var line = console.readLine("> ")?.trim() ?: break
 
         if (line == "") continue
         if (line == "exit") break
@@ -47,10 +48,4 @@ fun main(args: Array<String>) {
     }
 
     println("Thank you for visiting Siilinkari, have a nice day!")
-}
-
-fun Scanner.nextLineWithPrompt(prompt: String): String? {
-    print(prompt)
-
-    return if (hasNextLine()) nextLine() else null
 }
