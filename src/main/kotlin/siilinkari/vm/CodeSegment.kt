@@ -36,13 +36,6 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>) {
             get() = opCodes.size
 
         /**
-         * Adds a new label. This initializes the label to the current address.
-         */
-        operator fun plusAssign(label: Label) {
-            label.address = opCodes.size
-        }
-
-        /**
          * Adds instructions of [segment] to this builder, relocating all labels
          * as needed.
          */
