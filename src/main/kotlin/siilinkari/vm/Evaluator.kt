@@ -34,7 +34,7 @@ class Evaluator {
      * Binds a global function using given expression as body.
      */
     fun bindFunction(name: String, args: List<Pair<String, Type>>, code: String) {
-        bind(name, createFunctionFromExpression(args, code))
+        bind(name, createFunctionFromExpression(args, code), mutable = false)
     }
 
     /**
