@@ -71,9 +71,15 @@ The evaluator consists of the following pipeline:
     typed syntax tree              siilinkari.types.{TypedExpression, TypedStatement}
           |
           |
-          o--------- translator    siilinkari.translator.Translator
+          o--------- optimizer     siilinkari.optimizer.ASTOptimizer
           |
           v
+    typed syntax tree              (same as above)
+          |
+          |
+          o--------- translator    siilinkari.translator.Translator
+          |
+          v          
     stack vm opcodes               siilinkari.vm.{OpCode, CodeSegment}
           |
           |

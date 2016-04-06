@@ -2,6 +2,7 @@ package siilinkari.vm
 
 import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.objects.Value
+import siilinkari.optimizer.optimize
 import siilinkari.parser.parseExpression
 import siilinkari.parser.parseStatement
 import siilinkari.translator.translateTo
@@ -50,7 +51,7 @@ class Evaluator {
      */
     fun evaluateExpression(code: String): Value {
         val exp = parseExpression(code)
-        val typedExp = exp.typeCheck(globalTypeEnvironment)
+        val typedExp = exp.typeCheck(globalTypeEnvironment).optimize()
         val translated = CodeSegment.Builder()
         typedExp.translateTo(translated)
         translated += OpCode.Quit
@@ -72,7 +73,7 @@ class Evaluator {
      */
     private fun translate(code: String): CodeSegment.Builder {
         val stmt = parseStatement(code)
-        val typedStmt = stmt.typeCheck(globalTypeEnvironment)
+        val typedStmt = stmt.typeCheck(globalTypeEnvironment).optimize()
 
         val translated = CodeSegment.Builder()
         if (typedStmt is TypedStatement.Exp) {
@@ -88,7 +89,7 @@ class Evaluator {
      * Creates a callable function from given expression.
      */
     private fun createFunctionFromExpression(args: List<Pair<String, Type>>, code: String): Value.Function {
-        val typedExp = parseExpression(code).typeCheck(globalTypeEnvironment.newScope(args))
+        val typedExp = parseExpression(code).typeCheck(globalTypeEnvironment.newScope(args)).optimize()
 
         val codeSegment = CodeSegment.Builder()
         typedExp.translateTo(codeSegment)

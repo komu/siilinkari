@@ -26,6 +26,9 @@ sealed class TypedExpression(val type: Type) {
 
     /** Literal value */
     class Lit(val value: Value, type: Type) : TypedExpression(type) {
+        constructor(value: Value.Integer): this(value, Type.Int)
+        constructor(value: Value.Bool): this(value, Type.Boolean)
+        constructor(value: Value.String): this(value, Type.String)
         override fun toString() = "[Lit ${value.repr()}]"
     }
 
