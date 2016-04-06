@@ -14,9 +14,29 @@ fun TypedStatement.optimize(): TypedStatement = when (this) {
     is Exp              -> Exp(expression.optimize())
     is Assign           -> Assign(variable, expression.optimize())
     is Var              -> Var(variable, expression.optimize())
-    is If               -> If(condition.optimize(), consequent.optimize(), alternative?.optimize());
-    is While            -> While(condition.optimize(), body.optimize())
-    is StatementList    -> StatementList(statements.map { it.optimize() })
+    is If               -> optimize()
+    is While            -> optimize()
+    is StatementList    -> statements.singleOrNull()?.optimize() ?: StatementList(statements.map { it.optimize() })
+}
+
+fun If.optimize(): TypedStatement {
+    val optCondition = condition.optimize()
+    return if (optCondition is Lit && optCondition.value is Value.Bool) {
+        if (optCondition.value.value)
+            consequent.optimize()
+        else
+            alternative?.optimize() ?: StatementList(emptyList())
+    } else {
+        If(optCondition, consequent.optimize(), alternative?.optimize());
+    }
+}
+
+fun While.optimize(): TypedStatement {
+    val optCondition = condition.optimize()
+    if (optCondition is Lit && optCondition.value is Value.Bool && optCondition.value.value == false) {
+        return StatementList(emptyList())
+    }
+    return While(optCondition, body.optimize())
 }
 
 fun TypedExpression.optimize(): TypedExpression = when (this) {
