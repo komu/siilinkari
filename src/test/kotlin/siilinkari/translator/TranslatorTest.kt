@@ -28,12 +28,12 @@ class TranslatorTest {
             5 Push 0
             6 Equal
             7 Not
-            8 JumpIfFalse [Label 14]
+            8 JumpIfFalse 14
             9 LoadLocal 0 ; x
             10 Push 1
             11 Subtract
             12 StoreLocal 0 ; x
-            13 Jump [Label 4]
+            13 Jump 4
             """)
     }
 

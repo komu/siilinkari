@@ -62,7 +62,6 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>) {
          * Builds the segment.
          */
         fun build(): CodeSegment {
-            assert(opCodes.all { it.isInitialized }) { "uninitialized opcodes"}
             return CodeSegment(opCodes)
         }
 

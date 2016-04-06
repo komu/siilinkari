@@ -5,8 +5,7 @@ import siilinkari.objects.Value
 sealed class OpCode {
     override fun toString() = javaClass.simpleName
 
-    open val isInitialized = true
-    open fun relocate(address: Int) = this
+    open fun relocate(baseAddress: Int) = this
 
     object Not : OpCode()
     object Add : OpCode()
@@ -52,19 +51,14 @@ sealed class OpCode {
         override fun toString() = "StoreGlobal $offset ; $name"
     }
 
-    abstract class LabeledOpCode(val label: Label) : OpCode() {
-        override val isInitialized: Boolean
-            get() = label.isInitialized
+    class Jump(val address: Int) : OpCode() {
+        override fun toString() = "Jump $address"
+        override fun relocate(baseAddress: Int) = Jump(baseAddress + address)
     }
 
-    class Jump(label: Label) : LabeledOpCode(label) {
-        override fun toString() = "Jump $label"
-        override fun relocate(address: Int) = Jump(label.relocate(address))
-    }
-
-    class JumpIfFalse(label: Label) : LabeledOpCode(label) {
-        override fun toString() = "JumpIfFalse $label"
-        override fun relocate(address: Int) = JumpIfFalse(label.relocate(address))
+    class JumpIfFalse(val address: Int) : OpCode() {
+        override fun toString() = "JumpIfFalse $address"
+        override fun relocate(baseAddress: Int) = JumpIfFalse(baseAddress + address)
     }
 
     /**

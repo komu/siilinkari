@@ -140,8 +140,8 @@ class Evaluator {
                 OpCode.LessThanOrEqual  -> state.evalBinary<Value, Value> { l, r -> Value.Bool(l == r || l.lessThan(r)) }
                 OpCode.ConcatString     -> state.evalBinary<Value.String, Value> { l, r -> l + r }
                 is OpCode.Push          -> state.push(op.value)
-                is OpCode.Jump          -> state.pc = op.label.address
-                is OpCode.JumpIfFalse   -> if (!state.pop<Value.Bool>().value) state.pc = op.label.address
+                is OpCode.Jump          -> state.pc = op.address
+                is OpCode.JumpIfFalse   -> if (!state.pop<Value.Bool>().value) state.pc = op.address
                 is OpCode.Enter         -> state.enterFrame(op.frameSize)
                 is OpCode.Leave         -> state.leaveFrame(op.paramCount)
                 is OpCode.LoadLocal     -> state.push(state[op.offset])

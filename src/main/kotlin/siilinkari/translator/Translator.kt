@@ -6,23 +6,28 @@ import siilinkari.types.TypedExpression
 import siilinkari.types.TypedStatement
 import siilinkari.vm.CodeSegment
 import siilinkari.vm.Label
-import siilinkari.vm.OpCode
 
 /**
- * Translates [TypedStatement] to [CodeSegment] containing [OpCode]s for vm to run.
+ * Translates [TypedStatement] to [CodeSegment] containing OpCodes for vm to run.
  */
 fun TypedStatement.translateTo(code: CodeSegment.Builder) {
-    Translator(code).apply { emitCode() }
+    val translator = Translator()
+    translator.apply { emitCode() }
+    translator.code.buildTo(code)
 }
 
 /**
- * Translates [TypedExpression] to [CodeSegment] containing [OpCode]s for vm to run.
+ * Translates [TypedExpression] to [CodeSegment] containing OpCodes for vm to run.
  */
 fun TypedExpression.translateTo(code: CodeSegment.Builder) {
-    Translator(code).apply { emitCode() }
+    val translator = Translator()
+    translator.apply { emitCode() }
+    translator.code.buildTo(code)
 }
 
-class Translator(private val code: CodeSegment.Builder) {
+class Translator() {
+
+    val code = IRBuilder()
 
     fun TypedStatement.emitCode() {
         when (this) {
@@ -31,7 +36,7 @@ class Translator(private val code: CodeSegment.Builder) {
 
                 // If we are evaluating an expression as a statement,
                 // we need to discard the result of the expression.
-                code += OpCode.Pop
+                code += IR.Pop
             }
             is TypedStatement.StatementList ->
                 statements.forEach { it.emitCode() }
@@ -47,11 +52,11 @@ class Translator(private val code: CodeSegment.Builder) {
                 val falseBranch = Label()
 
                 condition.emitCode()
-                code += OpCode.JumpIfFalse(falseBranch)
+                code += IR.JumpIfFalse(falseBranch)
                 consequent.emitCode()
                 if (alternative != null) {
                     val afterIf = Label()
-                    code += OpCode.Jump(afterIf)
+                    code += IR.Jump(afterIf)
                     code += falseBranch
                     alternative.emitCode()
                     code += afterIf
@@ -65,9 +70,9 @@ class Translator(private val code: CodeSegment.Builder) {
 
                 code += beforeLoop
                 condition.emitCode()
-                code += OpCode.JumpIfFalse(afterLoop)
+                code += IR.JumpIfFalse(afterLoop)
                 body.emitCode()
-                code += OpCode.Jump(beforeLoop)
+                code += IR.Jump(beforeLoop)
                 code += afterLoop
             }
             else -> error("unknown statement: $this")
@@ -79,17 +84,17 @@ class Translator(private val code: CodeSegment.Builder) {
             is TypedExpression.Ref ->
                 binding.emitLoad()
             is TypedExpression.Lit ->
-                code += OpCode.Push(value)
+                code += IR.Push(value)
             is TypedExpression.Not -> {
                 exp.emitCode()
-                code += OpCode.Not
+                code += IR.Not
             }
             is TypedExpression.Binary ->
                 emitCode()
             is TypedExpression.Call -> {
                 args.asReversed().forEach { it.emitCode() }
                 func.emitCode()
-                code += OpCode.Call
+                code += IR.Call
             }
             else ->
                 error("unknown expression: $this")
@@ -100,11 +105,11 @@ class Translator(private val code: CodeSegment.Builder) {
         lhs.emitCode()
         rhs.emitCode()
         when (this) {
-            is TypedExpression.Binary.Plus         -> code += OpCode.Add
-            is TypedExpression.Binary.Minus        -> code += OpCode.Subtract
-            is TypedExpression.Binary.Multiply     -> code += OpCode.Multiply
-            is TypedExpression.Binary.Divide       -> code += OpCode.Divide
-            is TypedExpression.Binary.ConcatString -> code += OpCode.ConcatString
+            is TypedExpression.Binary.Plus         -> code += IR.Add
+            is TypedExpression.Binary.Minus        -> code += IR.Subtract
+            is TypedExpression.Binary.Multiply     -> code += IR.Multiply
+            is TypedExpression.Binary.Divide       -> code += IR.Divide
+            is TypedExpression.Binary.ConcatString -> code += IR.ConcatString
             is TypedExpression.Binary.Relational   -> op.emitCode()
             else                                   -> error("unknown expression: $this")
         }
@@ -112,28 +117,28 @@ class Translator(private val code: CodeSegment.Builder) {
 
     private fun RelationalOp.emitCode() {
         when (this) {
-            RelationalOp.Equals             -> code += OpCode.Equal
-            RelationalOp.NotEquals          -> { code += OpCode.Equal; code += OpCode.Not }
-            RelationalOp.LessThan           -> code += OpCode.LessThan
-            RelationalOp.LessThanOrEqual    -> code += OpCode.LessThanOrEqual
-            RelationalOp.GreaterThan        -> { code += OpCode.LessThanOrEqual; code += OpCode.Not }
-            RelationalOp.GreaterThanOrEqual -> { code += OpCode.LessThan; code += OpCode.Not }
+            RelationalOp.Equals             -> code += IR.Equal
+            RelationalOp.NotEquals          -> { code += IR.Equal; code += IR.Not }
+            RelationalOp.LessThan           -> code += IR.LessThan
+            RelationalOp.LessThanOrEqual    -> code += IR.LessThanOrEqual
+            RelationalOp.GreaterThan        -> { code += IR.LessThanOrEqual; code += IR.Not }
+            RelationalOp.GreaterThanOrEqual -> { code += IR.LessThan; code += IR.Not }
         }
     }
 
     private fun Binding.emitStore() {
         code += when (this) {
-            is Binding.Local    -> OpCode.StoreLocal(index, name)
-            is Binding.Global   -> OpCode.StoreGlobal(index, name)
+            is Binding.Local    -> IR.StoreLocal(index, name)
+            is Binding.Global   -> IR.StoreGlobal(index, name)
             is Binding.Argument -> error("can't store into arguments")
         }
     }
 
     private fun Binding.emitLoad() {
         code += when (this) {
-            is Binding.Local    -> OpCode.LoadLocal(index, name)
-            is Binding.Global   -> OpCode.LoadGlobal(index, name)
-            is Binding.Argument -> OpCode.LoadArgument(index, name)
+            is Binding.Local    -> IR.LoadLocal(index, name)
+            is Binding.Global   -> IR.LoadGlobal(index, name)
+            is Binding.Argument -> IR.LoadArgument(index, name)
         }
     }
 }
