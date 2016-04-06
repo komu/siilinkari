@@ -1,6 +1,5 @@
 package siilinkari.vm
 
-import siilinkari.env.Binding
 import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.objects.Value
 import siilinkari.parser.parseExpression
@@ -141,16 +140,11 @@ class Evaluator {
                 is OpCode.JumpIfFalse   -> if (!state.pop<Value.Bool>().value) state.pc = op.label.address
                 is OpCode.Enter         -> state.enterFrame(op.frameSize)
                 is OpCode.Leave         -> state.leaveFrame(op.paramCount)
-                is OpCode.Load          -> state.push(when (op.binding) {
-                    is Binding.Local    -> state[op.binding.index]
-                    is Binding.Argument -> state.loadArgument(op.binding.index)
-                    is Binding.Global   -> globalData[op.binding.index]
-                })
-                is OpCode.Store         -> when (op.binding) {
-                    is Binding.Local    -> state[op.binding.index] = state.popValue()
-                    is Binding.Global   -> globalData[op.binding.index] = state.popValue()
-                    is Binding.Argument -> error("can't store values to arguments")
-                }
+                is OpCode.LoadLocal     -> state.push(state[op.offset])
+                is OpCode.LoadGlobal    -> state.push(globalData[op.offset])
+                is OpCode.LoadArgument  -> state.push(state.loadArgument(op.offset))
+                is OpCode.StoreLocal    -> state[op.offset] = state.popValue()
+                is OpCode.StoreGlobal   -> globalData[op.offset] = state.popValue()
                 is OpCode.Call          -> evalCall(state)
                 OpCode.Ret              -> state.pc = state.pop<Value.Pointer.Code>().value
                 OpCode.Quit             -> break@evalLoop

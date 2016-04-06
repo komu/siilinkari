@@ -23,16 +23,16 @@ class TranslatorTest {
             0 Push 4
             1 Push 1
             2 Add
-            3 Store [Local 0 (x)]
-            4 Load [Local 0 (x)]
+            3 StoreLocal 0 ; x
+            4 LoadLocal 0 ; x
             5 Push 0
             6 Equal
             7 Not
             8 JumpIfFalse [Label 14]
-            9 Load [Local 0 (x)]
+            9 LoadLocal 0 ; x
             10 Push 1
             11 Subtract
-            12 Store [Local 0 (x)]
+            12 StoreLocal 0 ; x
             13 Jump [Label 4]
             """)
     }

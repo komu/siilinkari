@@ -1,6 +1,5 @@
 package siilinkari.vm
 
-import siilinkari.env.Binding
 import java.util.*
 
 /**
@@ -57,7 +56,7 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>) {
          * Calculates the frame size needed by opcodes in this segment.
          */
         val frameSize: Int
-            get() = opCodes.localBindings().maxBy { it.index }?.index?.let { it + 1 } ?: 0
+            get() = opCodes.filterIsInstance<OpCode.LocalFrameOpCode>().map { it.localFrameOffset + 1 }.max() ?: 0
 
         /**
          * Builds the segment.
@@ -71,6 +70,3 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>) {
             opCodes.asSequence().mapIndexed { i, op -> "$i $op" }.joinToString("\n")
     }
 }
-
-private fun List<OpCode>.localBindings(): Sequence<Binding.Local> =
-    asSequence().map { it.binding }.filterIsInstance<Binding.Local>()

@@ -1,13 +1,11 @@
 package siilinkari.vm
 
-import siilinkari.env.Binding
 import siilinkari.objects.Value
 
 sealed class OpCode {
     override fun toString() = javaClass.simpleName
 
     open val isInitialized = true
-    open val binding: Binding? = null
     open fun relocate(address: Int) = this
 
     object Not : OpCode()
@@ -28,14 +26,30 @@ sealed class OpCode {
         override fun toString() = "Push ${value.repr()}"
     }
 
-    abstract class BindingOpCode(override val binding: Binding) : OpCode()
-
-    class Load(binding: Binding) : BindingOpCode(binding) {
-        override fun toString() = "Load $binding"
+    abstract class LocalFrameOpCode : OpCode() {
+        abstract val localFrameOffset: Int
     }
 
-    class Store(binding: Binding) : BindingOpCode(binding) {
-        override fun toString() = "Store $binding"
+    class LoadLocal(val offset: Int, val name: String) : LocalFrameOpCode() {
+        override val localFrameOffset = offset
+        override fun toString() = "LoadLocal $offset ; $name"
+    }
+
+    class LoadGlobal(val offset: Int, val name: String) : OpCode() {
+        override fun toString() = "LoadGlobal $offset ; $name"
+    }
+
+    class LoadArgument(val offset: Int, val name: String) : OpCode() {
+        override fun toString() = "LoadArgument $offset ; $name"
+    }
+
+    class StoreLocal(val offset: Int, val name: String) : LocalFrameOpCode() {
+        override val localFrameOffset = offset
+        override fun toString() = "StoreLocal $offset ; $name"
+    }
+
+    class StoreGlobal(val offset: Int, val name: String) : OpCode() {
+        override fun toString() = "StoreGlobal $offset ; $name"
     }
 
     abstract class LabeledOpCode(val label: Label) : OpCode() {

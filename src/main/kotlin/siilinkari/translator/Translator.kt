@@ -1,6 +1,7 @@
 package siilinkari.translator
 
 import siilinkari.ast.RelationalOp
+import siilinkari.env.Binding
 import siilinkari.types.TypedExpression
 import siilinkari.types.TypedStatement
 import siilinkari.vm.CodeSegment
@@ -36,11 +37,11 @@ class Translator(private val code: CodeSegment.Builder) {
                 statements.forEach { it.emitCode() }
             is TypedStatement.Assign -> {
                 expression.emitCode()
-                code += OpCode.Store(variable)
+                variable.emitStore()
             }
             is TypedStatement.Var -> {
                 expression.emitCode()
-                code += OpCode.Store(variable)
+                variable.emitStore()
             }
             is TypedStatement.If -> {
                 val falseBranch = Label()
@@ -76,7 +77,7 @@ class Translator(private val code: CodeSegment.Builder) {
     fun TypedExpression.emitCode() {
         when (this) {
             is TypedExpression.Ref ->
-                code += OpCode.Load(binding)
+                binding.emitLoad()
             is TypedExpression.Lit ->
                 code += OpCode.Push(value)
             is TypedExpression.Not -> {
@@ -117,6 +118,22 @@ class Translator(private val code: CodeSegment.Builder) {
             RelationalOp.LessThanOrEqual    -> code += OpCode.LessThanOrEqual
             RelationalOp.GreaterThan        -> { code += OpCode.LessThanOrEqual; code += OpCode.Not }
             RelationalOp.GreaterThanOrEqual -> { code += OpCode.LessThan; code += OpCode.Not }
+        }
+    }
+
+    private fun Binding.emitStore() {
+        code += when (this) {
+            is Binding.Local    -> OpCode.StoreLocal(index, name)
+            is Binding.Global   -> OpCode.StoreGlobal(index, name)
+            is Binding.Argument -> error("can't store into arguments")
+        }
+    }
+
+    private fun Binding.emitLoad() {
+        code += when (this) {
+            is Binding.Local    -> OpCode.LoadLocal(index, name)
+            is Binding.Global   -> OpCode.LoadGlobal(index, name)
+            is Binding.Argument -> OpCode.LoadArgument(index, name)
         }
     }
 }
