@@ -1,63 +1,73 @@
 package siilinkari.optimizer
 
 import siilinkari.ast.RelationalOp
+import siilinkari.env.Binding
 import siilinkari.objects.Value
 import siilinkari.types.TypedExpression
 import siilinkari.types.TypedExpression.*
 import siilinkari.types.TypedStatement
 import siilinkari.types.TypedStatement.*
+import java.util.*
 
-/**
- * Performs simple optimizations on the typed AST.
- */
-fun TypedStatement.evaluateConstantExpressions(): TypedStatement = when (this) {
-    is Exp              -> Exp(expression.evaluateConstantExpressions())
-    is Assign           -> Assign(variable, expression.evaluateConstantExpressions())
-    is Var              -> Var(variable, expression.evaluateConstantExpressions())
-    is If               -> evaluateConstantExpressions()
-    is While            -> evaluateConstantExpressions()
-    is StatementList    -> statements.singleOrNull()?.evaluateConstantExpressions() ?: StatementList(statements.map { it.evaluateConstantExpressions() })
-}
+fun TypedStatement.evaluateConstantExpressions(): TypedStatement = eval(ConstantBindingEnv())
+fun TypedExpression.evaluateConstantExpressions(): TypedExpression = eval(ConstantBindingEnv())
 
-fun TypedExpression.evaluateConstantExpressions(): TypedExpression = when (this) {
-    is Ref      -> this
-    is Lit      -> this
-    is Call     -> Call(func.evaluateConstantExpressions(), args.map { it.evaluateConstantExpressions() }, type)
-    is Not      -> evaluateConstantExpressions()
-    is Binary   -> evaluateConstantExpressions()
-}
-
-private fun If.evaluateConstantExpressions(): TypedStatement {
-    val optCondition = condition.evaluateConstantExpressions()
-    return if (optCondition is Lit && optCondition.value is Value.Bool) {
-        if (optCondition.value.value)
-            consequent.evaluateConstantExpressions()
-        else
-            alternative?.evaluateConstantExpressions() ?: StatementList(emptyList())
-    } else {
-        If(optCondition, consequent.evaluateConstantExpressions(), alternative?.evaluateConstantExpressions());
+private fun TypedStatement.eval(env: ConstantBindingEnv): TypedStatement = when (this) {
+    is Exp              -> Exp(expression.eval(env))
+    is Assign           -> Assign(variable, expression.eval(env))
+    is Var              -> {
+        val value = expression.eval(env)
+        if (value is Lit && value.value.immutable && !variable.mutable)
+            env[variable] = value.value
+        Var(variable, value)
+    }
+    is If               -> eval(env)
+    is While            -> eval(env)
+    is StatementList    -> {
+        val childEnv = env.child()
+        statements.singleOrNull()?.eval(childEnv) ?: StatementList(statements.map { it.eval(childEnv) })
     }
 }
 
-private fun While.evaluateConstantExpressions(): TypedStatement {
-    val optCondition = condition.evaluateConstantExpressions()
+private fun TypedExpression.eval(env: ConstantBindingEnv): TypedExpression = when (this) {
+    is Ref      -> env[binding]?.let { Lit(it, type) } ?: this
+    is Lit      -> this
+    is Call     -> Call(func.eval(env), args.map { it.eval(env) }, type)
+    is Not      -> eval(env)
+    is Binary   -> eval(env)
+}
+
+private fun If.eval(env: ConstantBindingEnv): TypedStatement {
+    val optCondition = condition.eval(env)
+    return if (optCondition is Lit && optCondition.value is Value.Bool) {
+        if (optCondition.value.value)
+            consequent.eval(env.child())
+        else
+            alternative?.eval(env.child()) ?: StatementList(emptyList())
+    } else {
+        If(optCondition, consequent.eval(env.child()), alternative?.eval(env.child()));
+    }
+}
+
+private fun While.eval(env: ConstantBindingEnv): TypedStatement {
+    val optCondition = condition.eval(env)
     if (optCondition is Lit && optCondition.value is Value.Bool && optCondition.value.value == false) {
         return StatementList(emptyList())
     }
-    return While(optCondition, body.evaluateConstantExpressions())
+    return While(optCondition, body.eval(env.child()))
 }
 
-private fun Not.evaluateConstantExpressions(): TypedExpression {
-    val optExp = exp.evaluateConstantExpressions()
+private fun Not.eval(env: ConstantBindingEnv): TypedExpression {
+    val optExp = exp.eval(env)
     return if (optExp is Lit)
         Lit(!(optExp.value as Value.Bool))
     else
         optExp
 }
 
-private fun TypedExpression.Binary.evaluateConstantExpressions(): TypedExpression {
-    val optLhs = lhs.evaluateConstantExpressions()
-    val optRhs = rhs.evaluateConstantExpressions()
+private fun TypedExpression.Binary.eval(env: ConstantBindingEnv): TypedExpression {
+    val optLhs = lhs.eval(env)
+    val optRhs = rhs.eval(env)
 
     if (optLhs is Lit && optRhs is Lit) {
         if (this is Binary.Relational) {
@@ -97,4 +107,21 @@ private fun RelationalOp.evaluate(lhs: Value, rhs: Value): Boolean {
         RelationalOp.GreaterThan        -> rhs.lessThan(lhs)
         RelationalOp.GreaterThanOrEqual -> rhs.lessThan(lhs) || lhs == rhs
     }
+}
+
+/**
+ * Environment containing all constant bindings.
+ */
+private class ConstantBindingEnv(private val parent: ConstantBindingEnv? = null) {
+
+    private val constantBindings = HashMap<Binding, Value>()
+
+    fun child(): ConstantBindingEnv = ConstantBindingEnv(this)
+
+    operator fun set(binding: Binding, value: Value) {
+        constantBindings[binding] = value
+    }
+
+    operator fun get(binding: Binding): Value? =
+        constantBindings[binding] ?: parent?.get(binding)
 }

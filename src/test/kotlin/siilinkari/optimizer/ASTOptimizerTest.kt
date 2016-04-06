@@ -46,10 +46,24 @@ class ASTOptimizerTest {
     }
 
     @Test
-    @Ignore("variable propagation is not implemented")
     fun propagateConstantVariables() {
         env.bind("foo", Type.Function(listOf(Type.String), Type.Unit))
-        assertOptimizedStatement("""if (true) { val s = "hello"; foo(s + ", world!"); }""", """[Call [Ref foo] [[Lit "hello, world!"]]]""")
+        assertOptimizedStatement("""if (true) { val s = "hello"; foo(s + ", world!"); }""",
+                """[StatementList [Var [Local 0 (s)] [Lit "hello"]], [Call [Ref foo] [[Lit "hello, world!"]]]]]""")
+    }
+
+    @Test
+    @Ignore("detecting effectively constant variables is not implemented")
+    fun propagateEffectivelyConstantVariables() {
+        env.bind("foo", Type.Function(listOf(Type.String), Type.Unit))
+        assertOptimizedStatement("""if (true) { var s = "hello"; foo(s + ", world!"); }""",
+                """[StatementList [Var [Local 0 (s)] [Lit "hello"]], [Call [Ref foo] [[Lit "hello, world!"]]]]]""")
+    }
+
+    @Test
+    @Ignore("removing unused variables is not implemented")
+    fun removeUnusedVariables() {
+        assertOptimizedStatement("if (true) { val s = 0; }", "[StatementList []]")
     }
 
     private fun assertOptimizedExpression(code: String, expectedAST: String) {

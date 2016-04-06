@@ -24,6 +24,9 @@ sealed class Value {
      */
     object Unit : Value()
 
+    /** Are value of this type immutable? (Can they be safely used in constant propagation?) */
+    val immutable = true
+
     open fun lessThan(r: Value): Boolean = error("< not supported for $this")
 
     /**
