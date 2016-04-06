@@ -2,6 +2,7 @@ package siilinkari.parser
 
 import siilinkari.ast.Expression
 import siilinkari.ast.Expression.Binary
+import siilinkari.ast.RelationalOp
 import siilinkari.ast.Statement
 import siilinkari.lexer.*
 import siilinkari.lexer.Token.*
@@ -87,9 +88,9 @@ private class Parser(lexer: Lexer) {
             val location = lexer.nextTokenLocation()
             when {
                 lexer.readNextIf(Operator.EqualEqual) ->
-                    exp = Binary.Equals(exp, parseExpression2(), location)
+                    exp = Binary.Relational(RelationalOp.Equals, exp, parseExpression2(), location)
                 lexer.readNextIf(Operator.NotEqual) ->
-                    exp = Binary.NotEquals(exp, parseExpression2(), location)
+                    exp = Binary.Relational(RelationalOp.NotEquals, exp, parseExpression2(), location)
                 else ->
                     return exp
             }
@@ -100,7 +101,7 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * expression2 ::= expression3 (("+" | "-") expression3)*
+     * expression2 ::= expression3 (("<" | ">" | "<=" | ">=") expression3)*
      * ```
      */
     private fun parseExpression2(): Expression {
@@ -109,10 +110,14 @@ private class Parser(lexer: Lexer) {
         while (lexer.hasMore) {
             val location = lexer.nextTokenLocation()
             when {
-                lexer.readNextIf(Operator.Plus) ->
-                    exp = Binary.Plus(exp, parseExpression3(), location)
-                lexer.readNextIf(Operator.Minus) ->
-                    exp = Binary.Minus(exp, parseExpression3(), location)
+                lexer.readNextIf(Operator.LessThan) ->
+                    exp = Binary.Relational(RelationalOp.LessThan, exp, parseExpression3(), location)
+                lexer.readNextIf(Operator.LessThanOrEqual) ->
+                    exp = Binary.Relational(RelationalOp.LessThanOrEqual, exp, parseExpression3(), location)
+                lexer.readNextIf(Operator.GreaterThan) ->
+                    exp = Binary.Relational(RelationalOp.GreaterThan, exp, parseExpression3(), location)
+                lexer.readNextIf(Operator.GreaterThanOrEqual) ->
+                    exp = Binary.Relational(RelationalOp.GreaterThanOrEqual, exp, parseExpression3(), location)
                 else ->
                     return exp
             }
@@ -123,7 +128,7 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * expression3 ::= expression4 (("*" | "/") expression4)*
+     * expression3 ::= expression4 (("+" | "-") expression4)*
      * ```
      */
     private fun parseExpression3(): Expression {
@@ -132,10 +137,10 @@ private class Parser(lexer: Lexer) {
         while (lexer.hasMore) {
             val location = lexer.nextTokenLocation()
             when {
-                lexer.readNextIf(Operator.Multiply) ->
-                    exp = Binary.Multiply(exp, parseExpression4(), location)
-                lexer.readNextIf(Operator.Divide) ->
-                    exp = Binary.Divide(exp, parseExpression4(), location)
+                lexer.readNextIf(Operator.Plus) ->
+                    exp = Binary.Plus(exp, parseExpression4(), location)
+                lexer.readNextIf(Operator.Minus) ->
+                    exp = Binary.Minus(exp, parseExpression4(), location)
                 else ->
                     return exp
             }
@@ -146,11 +151,34 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * expression4 ::= expression5 [ '(' args ')']
+     * expression4 ::= expression5 (("*" | "/") expression5)*
      * ```
      */
     private fun parseExpression4(): Expression {
-        val exp = parseExpression5()
+        var exp = parseExpression5()
+
+        while (lexer.hasMore) {
+            val location = lexer.nextTokenLocation()
+            when {
+                lexer.readNextIf(Operator.Multiply) ->
+                    exp = Binary.Multiply(exp, parseExpression5(), location)
+                lexer.readNextIf(Operator.Divide) ->
+                    exp = Binary.Divide(exp, parseExpression5(), location)
+                else ->
+                    return exp
+            }
+        }
+
+        return exp
+    }
+
+    /**
+     * ```
+     * expression5 ::= expression6 [ '(' args ')']
+     * ```
+     */
+    private fun parseExpression5(): Expression {
+        val exp = parseExpression6()
 
         return if (lexer.nextTokenIs(Punctuation.LeftParen))
             Expression.Call(exp, parseArgumentList())
@@ -163,7 +191,7 @@ private class Parser(lexer: Lexer) {
      * expression5 ::= identifier | literal | not | "(" expression ")"
      * ```
      */
-    private fun parseExpression5(): Expression {
+    private fun parseExpression6(): Expression {
         val (token, location) = lexer.peekToken()
 
         return when (token) {
@@ -228,7 +256,7 @@ private class Parser(lexer: Lexer) {
 
     private fun parseNot(): Expression {
         val location = lexer.expect(Operator.Not)
-        val exp = parseExpression4()
+        val exp = parseExpression5()
 
         return Expression.Not(exp, location)
     }

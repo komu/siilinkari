@@ -58,13 +58,11 @@ private fun Expression.Binary.typeCheck(env: StaticEnvironment): TypedExpression
         val typedRhs = rhs.typeCheckExpected(Type.Int, env)
         TypedExpression.Binary.Divide(typedLhs, typedRhs, Type.Int)
     }
-    is Expression.Binary.Equals    -> {
-        val (l, r) = typeCheckMatching(env);
-        TypedExpression.Binary.Equals(l, r)
-    }
-    is Expression.Binary.NotEquals -> {
-        val (l, r) = typeCheckMatching(env);
-        TypedExpression.Not(TypedExpression.Binary.Equals(l, r))
+    is Expression.Binary.Relational -> {
+        val (l, r) = typeCheckMatching(env)
+        if (l.type == Type.Unit || l.type is Type.Function)
+            throw TypeCheckException("can't compare values of type ${l.type}", location)
+        TypedExpression.Binary.Relational(op, l, r)
     }
 }
 

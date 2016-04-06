@@ -166,6 +166,23 @@ class EvaluatorTest {
         assertExpressionEvaluation("\"foo \" + true", "foo true".value)
     }
 
+    @Test
+    fun relationalOperators() {
+        assertExpressionEvaluation("1 == 1", true.value)
+        assertExpressionEvaluation("1 != 1", false.value)
+        assertExpressionEvaluation("1 < 1", false.value)
+        assertExpressionEvaluation("1 <= 1", true.value)
+        assertExpressionEvaluation("1 > 1", false.value)
+        assertExpressionEvaluation("1 >= 1", true.value)
+
+        assertExpressionEvaluation("1 == 2", false.value)
+        assertExpressionEvaluation("1 != 2", true.value)
+        assertExpressionEvaluation("1 < 2", true.value)
+        assertExpressionEvaluation("1 <= 2", true.value)
+        assertExpressionEvaluation("1 > 2", false.value)
+        assertExpressionEvaluation("1 >= 2", false.value)
+    }
+
     private fun assertExpressionTypeCheckFails(s: String) {
         assertFailsWith<TypeCheckException> {
             evaluateExpression(s)

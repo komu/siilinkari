@@ -130,6 +130,8 @@ class Evaluator {
                 OpCode.Multiply         -> state.evalBinary<Value.Integer, Value.Integer> { l, r -> l * r }
                 OpCode.Divide           -> state.evalBinary<Value.Integer, Value.Integer> { l, r -> l / r }
                 OpCode.Equal            -> state.evalBinary<Value, Value> { l, r -> Value.Bool(l == r) }
+                OpCode.LessThan         -> state.evalBinary<Value, Value> { l, r -> Value.Bool(l.lessThan(r)) }
+                OpCode.LessThanOrEqual  -> state.evalBinary<Value, Value> { l, r -> Value.Bool(l == r || l.lessThan(r)) }
                 OpCode.ConcatString     -> state.evalBinary<Value.String, Value> { l, r -> l + r }
                 is OpCode.Push          -> state.push(op.value)
                 is OpCode.Jump          -> state.pc = op.label.address

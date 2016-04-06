@@ -62,6 +62,10 @@ sealed class Token {
         object EqualEqual : Operator("==")
         object NotEqual : Operator("!=")
         object Not : Operator("!")
+        object LessThan : Operator("<")
+        object GreaterThan : Operator(">")
+        object LessThanOrEqual : Operator("<=")
+        object GreaterThanOrEqual : Operator(">=")
     }
 
     /**

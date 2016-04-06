@@ -24,6 +24,8 @@ sealed class Value {
      */
     object Unit : Value()
 
+    open fun lessThan(r: Value): Boolean = error("< not supported for $this")
+
     /**
      * Strings.
      */
@@ -32,6 +34,7 @@ sealed class Value {
         override fun hashCode() = value.hashCode()
         override fun toString() = value
         override fun repr() = '"' + value.replace("\"", "\\\"") + '"'
+        override fun lessThan(r: Value) = value < (r as String).value
 
         operator fun plus(rhs: Value): String =
             String(value + rhs.toString())
@@ -48,6 +51,7 @@ sealed class Value {
             operator fun invoke(value: Boolean): Bool = if (value) True else False
         }
 
+        override fun lessThan(r: Value) = value < (r as Bool).value
         override fun equals(other: Any?) = other is Bool && value == other.value
         override fun hashCode() = value.hashCode()
         override fun toString() = value.toString()
@@ -61,6 +65,7 @@ sealed class Value {
         override fun equals(other: Any?) = other is Integer && value == other.value
         override fun hashCode() = value.hashCode()
         override fun toString() = value.toString()
+        override fun lessThan(r: Value) = value < (r as Integer).value
 
         operator fun plus(other: Integer) = Integer(value + other.value)
         operator fun minus(other: Integer) = Integer(value - other.value)

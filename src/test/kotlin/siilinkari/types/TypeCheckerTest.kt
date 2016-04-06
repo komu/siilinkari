@@ -126,6 +126,30 @@ class TypeCheckerTest {
         assertStatementTypeCheckFails("foo = 42;")
     }
 
+    @Test
+    fun relationalOperatorsAreNotSupportedForUnit() {
+        env.bind("foo", Type.Unit)
+
+        assertExpressionTypeCheckFails("foo == foo")
+        assertExpressionTypeCheckFails("foo != foo")
+        assertExpressionTypeCheckFails("foo < foo")
+        assertExpressionTypeCheckFails("foo > foo")
+        assertExpressionTypeCheckFails("foo <= foo")
+        assertExpressionTypeCheckFails("foo >= foo")
+    }
+
+    @Test
+    fun relationalOperatorsAreNotSupportedForFunctions() {
+        env.bind("foo", Type.Function(listOf(Type.String), Type.Int))
+
+        assertExpressionTypeCheckFails("foo == foo")
+        assertExpressionTypeCheckFails("foo != foo")
+        assertExpressionTypeCheckFails("foo < foo")
+        assertExpressionTypeCheckFails("foo > foo")
+        assertExpressionTypeCheckFails("foo <= foo")
+        assertExpressionTypeCheckFails("foo >= foo")
+    }
+
     private fun assertExpressionTypeCheckFails(code: String) {
         assertFailsWith<TypeCheckException> {
             typeCheckExpression(code)

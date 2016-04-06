@@ -40,6 +40,10 @@ class LexerTest {
         assertTokens("==", Operator.EqualEqual)
         assertTokens("!=", Operator.NotEqual)
         assertTokens("!", Operator.Not)
+        assertTokens("<", Operator.LessThan)
+        assertTokens(">", Operator.GreaterThan)
+        assertTokens("<=", Operator.LessThanOrEqual)
+        assertTokens(">=", Operator.GreaterThanOrEqual)
     }
 
     @Test

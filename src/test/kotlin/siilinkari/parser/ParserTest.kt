@@ -58,6 +58,10 @@ class ParserTest {
         assertParseExpression("1 - 2", "[Minus [Lit 1] [Lit 2]]")
         assertParseExpression("1 == 2", "[Equals [Lit 1] [Lit 2]]")
         assertParseExpression("1 != 2", "[NotEquals [Lit 1] [Lit 2]]")
+        assertParseExpression("1 < 2", "[LessThan [Lit 1] [Lit 2]]")
+        assertParseExpression("1 > 2", "[GreaterThan [Lit 1] [Lit 2]]")
+        assertParseExpression("1 <= 2", "[LessThanOrEqual [Lit 1] [Lit 2]]")
+        assertParseExpression("1 >= 2", "[GreaterThanOrEqual [Lit 1] [Lit 2]]")
     }
 
     @Test
@@ -72,6 +76,7 @@ class ParserTest {
         assertParseExpression("!x + y", "[Plus [Not [Ref x]] [Ref y]]")
         assertParseExpression("!(x + y)", "[Not [Plus [Ref x] [Ref y]]]")
         assertParseExpression("a + b * c + d", "[Plus [Plus [Ref a] [Multiply [Ref b] [Ref c]]] [Ref d]]")
+        assertParseExpression("a == b < c", "[Equals [Ref a] [LessThan [Ref b] [Ref c]]]")
     }
 
     @Test

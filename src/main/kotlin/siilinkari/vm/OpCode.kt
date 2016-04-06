@@ -16,6 +16,8 @@ sealed class OpCode {
     object Multiply : OpCode()
     object Divide : OpCode()
     object Equal : OpCode()
+    object LessThan : OpCode()
+    object LessThanOrEqual : OpCode()
     object ConcatString : OpCode()
     object Pop : OpCode()
     object Call : OpCode()

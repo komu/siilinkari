@@ -1,5 +1,6 @@
 package siilinkari.types
 
+import siilinkari.ast.RelationalOp
 import siilinkari.env.Binding
 import siilinkari.objects.Value
 
@@ -9,11 +10,7 @@ import siilinkari.objects.Value
  * The tree is mostly analogous to expressions in the original AST, but there are some
  * differences.
  *
- * First of all, some redundancies have been removed. For example, we don't have `Binary.NotEquals(l, r)`
- * because it can be represented as `Not(Binary.Equals(l, r))`. The type-checker performs the simplification
- * so that the following stages (i.e. translator) have simpler language to work with.
- *
- * Second, there are some new nodes with more explicit meaning. For example, while `1 + 2` is translated
+ * For example, there are some new nodes with more explicit meaning. For example, while `1 + 2` is translated
  * to [TypedExpression.Binary.Plus], expressions `"foo" + "bar"` or `"foo" + 1` will be translated
  * to [TypedExpression.Binary.ConcatString].
  *
@@ -49,10 +46,10 @@ sealed class TypedExpression(val type: Type) {
         /** Numeric division */
         class Divide(lhs: TypedExpression, rhs: TypedExpression, type: Type) : Binary(lhs, rhs, type)
 
-        /** Equality comparison */
-        class Equals(lhs: TypedExpression, rhs: TypedExpression) : Binary(lhs, rhs, Type.Boolean)
-
         /** String concatenation */
         class ConcatString(lhs: TypedExpression, rhs: TypedExpression) : Binary(lhs, rhs, Type.String)
+
+        /** =, !=, <, >, <=, >= */
+        class Relational(val op: RelationalOp, lhs: TypedExpression, rhs: TypedExpression) : Binary(lhs, rhs, Type.Boolean)
     }
 }

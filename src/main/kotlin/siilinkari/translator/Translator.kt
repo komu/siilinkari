@@ -1,5 +1,6 @@
 package siilinkari.translator
 
+import siilinkari.ast.RelationalOp
 import siilinkari.types.TypedExpression
 import siilinkari.types.TypedStatement
 import siilinkari.vm.CodeSegment
@@ -102,9 +103,20 @@ class Translator(private val code: CodeSegment.Builder) {
             is TypedExpression.Binary.Minus        -> code += OpCode.Subtract
             is TypedExpression.Binary.Multiply     -> code += OpCode.Multiply
             is TypedExpression.Binary.Divide       -> code += OpCode.Divide
-            is TypedExpression.Binary.Equals       -> code += OpCode.Equal
             is TypedExpression.Binary.ConcatString -> code += OpCode.ConcatString
+            is TypedExpression.Binary.Relational   -> op.emitCode()
             else                                   -> error("unknown expression: $this")
+        }
+    }
+
+    private fun RelationalOp.emitCode() {
+        when (this) {
+            RelationalOp.Equals             -> code += OpCode.Equal
+            RelationalOp.NotEquals          -> { code += OpCode.Equal; code += OpCode.Not }
+            RelationalOp.LessThan           -> code += OpCode.LessThan
+            RelationalOp.LessThanOrEqual    -> code += OpCode.LessThanOrEqual
+            RelationalOp.GreaterThan        -> { code += OpCode.LessThanOrEqual; code += OpCode.Not }
+            RelationalOp.GreaterThanOrEqual -> { code += OpCode.LessThan; code += OpCode.Not }
         }
     }
 }
