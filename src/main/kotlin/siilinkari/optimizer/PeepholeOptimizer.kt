@@ -2,23 +2,24 @@ package siilinkari.optimizer
 
 import siilinkari.translator.BasicBlock
 import siilinkari.translator.IR
-import java.util.*
 
+/**
+ * Performs local optimizations to IR by looking at a small window of successive
+ * instructions.
+ */
 fun BasicBlock.peepholeOptimize() {
+    do {
+        var modified = false
+        for (i in opCodes.indices) {
+            if (i == 0) continue
 
-    val ops = ArrayList<IR>(opCodes)
-
-    opCodes.clear()
-
-    ops.forEachIndexed { i, current ->
-        opCodes.add(current)
-
-        if (i > 0) {
-            val previous = ops[i - 1]
+            val current = opCodes[i]
+            val previous = opCodes[i - 1]
             if (current is IR.LoadLocal && previous is IR.StoreLocal && current.index == previous.index) {
                 opCodes[i - 1] = IR.Dup
                 opCodes[i] = previous
+                modified = true
             }
         }
-    }
+    } while (modified)
 }
