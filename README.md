@@ -24,19 +24,17 @@ Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.
 > s
 "It worked!"
 > :dump if (x == 2 + 2) { var t = "It"; s = t + " worked!"; }
-0 Load [Global 2 (x)]
-1 Push 2
-2 Push 2
-3 Add
-4 Equal
-5 JumpIfFalse [Label 12]
-6 Push "It"
-7 Store [Local 0 (t)]
-8 Load [Local 0 (t)]
-9 Push " worked!"
-10 ConcatString
-11 Store [Global 3 (s)]
-12 Quit
+0 LoadGlobal 2 ; x
+1 Push 4
+2 Equal
+3 JumpIfFalse [Label 10]
+4 Push "It"
+5 StoreLocal 0 ; t
+6 LoadLocal 0 ; t
+7 Push " worked!"
+8 ConcatString
+9 StoreGlobal 3 ; s
+10 Quit
 > exit
 Thank you for visiting Siilinkari, have a nice day!
 ```

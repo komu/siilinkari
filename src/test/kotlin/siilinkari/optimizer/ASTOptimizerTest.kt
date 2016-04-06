@@ -1,5 +1,6 @@
 package siilinkari.optimizer
 
+import org.junit.Ignore
 import org.junit.Test
 import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.parser.parseExpression
@@ -42,6 +43,13 @@ class ASTOptimizerTest {
 
         assertOptimizedStatement("while (false) { foo(); }", "[StatementList []]")
         assertOptimizedStatement("while (1 == 2) { foo(); }", "[StatementList []]")
+    }
+
+    @Test
+    @Ignore("variable propagation is not implemented")
+    fun propagateConstantVariables() {
+        env.bind("foo", Type.Function(listOf(Type.String), Type.Unit))
+        assertOptimizedStatement("""if (true) { val s = "hello"; foo(s + ", world!"); }""", """[Call [Ref foo] [[Lit "hello, world!"]]]""")
     }
 
     private fun assertOptimizedExpression(code: String, expectedAST: String) {
