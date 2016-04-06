@@ -10,20 +10,17 @@ import siilinkari.types.Type
  * directly with their index in frame, whereas global variables are accessed
  * in global environment by name.
  */
-sealed class Binding(val name: String, val type: Type, val index: Int) {
+sealed class Binding(val name: String, val type: Type, val index: Int, val mutable: Boolean) {
 
-    open val isAssignable = true
-
-    class Global(name: String, type: Type, index: Int) : Binding(name, type, index) {
+    class Global(name: String, type: Type, index: Int, mutable: Boolean) : Binding(name, type, index, mutable) {
         override fun toString() = "[Global $index ($name)]"
     }
 
-    class Local(name: String, type: Type, index: Int) : Binding(name, type, index) {
+    class Local(name: String, type: Type, index: Int, mutable: Boolean) : Binding(name, type, index, mutable) {
         override fun toString() = "[Local $index ($name)]"
     }
 
-    class Argument(name: String, type: Type, index: Int) : Binding(name, type, index) {
+    class Argument(name: String, type: Type, index: Int) : Binding(name, type, index, false) {
         override fun toString() = "[Argument $index ($name)]"
-        override val isAssignable = false
     }
 }

@@ -29,8 +29,8 @@ sealed class Statement(val location: SourceLocation) {
     }
 
     /** Definition of a variable. */
-    class Var(val variable: String, val expression: Expression, location: SourceLocation) : Statement(location) {
-        override fun toString() = "[Var $variable $expression]"
+    class Var(val variable: String, val expression: Expression, val mutable: Boolean, location: SourceLocation) : Statement(location) {
+        override fun toString() = "[${if (mutable) "Var" else "Val"} $variable $expression]"
     }
 
     /** If-statement with optional else clause. */

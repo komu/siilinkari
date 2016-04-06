@@ -45,6 +45,7 @@ sealed class Token {
         object Fun : Keyword("fun")
         object If : Keyword("if")
         object Var : Keyword("var")
+        object Val : Keyword("val")
         object While : Keyword("while")
     }
 

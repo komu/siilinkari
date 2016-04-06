@@ -91,6 +91,7 @@ class Lexer(private val source: String, private val file: String = "<unknown>") 
             "fun"       -> Keyword.Fun
             "if"        -> Keyword.If
             "var"       -> Keyword.Var
+            "val"       -> Keyword.Val
             "while"     -> Keyword.While
             "true"      -> Literal(Bool.True)
             "false"     -> Literal(Bool.False)

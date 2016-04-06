@@ -24,8 +24,8 @@ class Evaluator {
     /**
      * Binds a global name to given value.
      */
-    fun bind(name: String, value: Value) {
-        val binding = globalTypeEnvironment.bind(name, value.type)
+    fun bind(name: String, value: Value, mutable: Boolean = true) {
+        val binding = globalTypeEnvironment.bind(name, value.type, mutable)
         globalData[binding.index] = value
     }
 

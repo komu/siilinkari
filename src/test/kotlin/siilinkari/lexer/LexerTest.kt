@@ -22,6 +22,7 @@ class LexerTest {
         assertTokens("else", Keyword.Else)
         assertTokens("fun", Keyword.Fun)
         assertTokens("var", Keyword.Var)
+        assertTokens("val", Keyword.Val)
         assertTokens("while", Keyword.While)
     }
 

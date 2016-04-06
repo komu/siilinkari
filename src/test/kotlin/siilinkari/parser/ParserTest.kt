@@ -42,6 +42,11 @@ class ParserTest {
     }
 
     @Test
+    fun vals() {
+        assertParseStatement("val foo = bar;", "[Val foo [Ref bar]]")
+    }
+
+    @Test
     fun statementList() {
         assertParseStatement("{}", "[StatementList []]")
         assertParseStatement("{ x; y; z; }", "[StatementList [[Ref x], [Ref y], [Ref z]]]")

@@ -52,7 +52,8 @@ private class Parser(lexer: Lexer) {
     fun parseStatement(): Statement = when (lexer.peekToken().token) {
         Keyword.If      -> parseIf()
         Keyword.While   -> parseWhile()
-        Keyword.Var     -> parseVar()
+        Keyword.Var     -> parseVariableDefinition()
+        Keyword.Val     -> parseVariableDefinition()
         LeftBrace       -> parseStatementList()
         is Identifier   -> {
             val exp = parseExpression();
@@ -210,14 +211,16 @@ private class Parser(lexer: Lexer) {
         return Statement.Assign(variable, rhs, location)
     }
 
-    private fun parseVar(): Statement {
-        val location = lexer.expect(Keyword.Var)
+    private fun parseVariableDefinition(): Statement {
+        val mutable = lexer.nextTokenIs(Keyword.Var)
+        val location = if (mutable) lexer.expect(Keyword.Var) else lexer.expect(Keyword.Val)
+
         val variable = parseName().first
         lexer.expect(Punctuation.Equal)
         val expression = parseExpression()
         lexer.expect(Punctuation.Semicolon);
 
-        return Statement.Var(variable, expression, location)
+        return Statement.Var(variable, expression, mutable, location)
     }
 
     private fun parseIf(): Statement {

@@ -23,10 +23,10 @@ abstract class StaticEnvironment(private val parent: StaticEnvironment?) {
      *
      * @throws VariableAlreadyBoundException if variable is already bound in this scope
      */
-    fun bind(name: String, type: Type): Binding {
+    fun bind(name: String, type: Type, mutable: Boolean = true): Binding {
         if (name in bindings) throw VariableAlreadyBoundException(name)
 
-        val binding = newBinding(name, type)
+        val binding = newBinding(name, type, mutable)
         bindings[name] = binding
         return binding
     }
@@ -34,7 +34,7 @@ abstract class StaticEnvironment(private val parent: StaticEnvironment?) {
     /**
      * Create a new binding to be installed in this environment.
      */
-    protected abstract fun newBinding(name: String, type: Type): Binding
+    protected abstract fun newBinding(name: String, type: Type, mutable: Boolean): Binding
 
     /**
      * Returns a new child scope for current environment.
@@ -51,7 +51,7 @@ abstract class StaticEnvironment(private val parent: StaticEnvironment?) {
  */
 class GlobalStaticEnvironment : StaticEnvironment(null) {
     private var bindingIndexSequence = 0
-    override fun newBinding(name: String, type: Type): Binding.Global = Binding.Global(name, type, bindingIndexSequence++)
+    override fun newBinding(name: String, type: Type, mutable: Boolean): Binding.Global = Binding.Global(name, type, bindingIndexSequence++, mutable)
     override fun newScope(): StaticEnvironment = LocalFrameEnvironment(this)
     fun newScope(args: List<Pair<String,Type>>): StaticEnvironment = LocalFrameEnvironment(this, args)
 }
@@ -72,7 +72,7 @@ private class LocalFrameEnvironment(parent: StaticEnvironment) : StaticEnvironme
         }
     }
 
-    public override fun newBinding(name: String, type: Type) = Binding.Local(name, type, bindingIndexSequence++)
+    public override fun newBinding(name: String, type: Type, mutable: Boolean) = Binding.Local(name, type, bindingIndexSequence++, mutable)
     override fun newScope(): StaticEnvironment = LocalFrameChildScope(this, this)
 }
 
@@ -81,6 +81,6 @@ private class LocalFrameEnvironment(parent: StaticEnvironment) : StaticEnvironme
  * new scope for names.
  */
 private class LocalFrameChildScope(parent: StaticEnvironment, val frame: LocalFrameEnvironment) : StaticEnvironment(parent) {
-    override fun newBinding(name: String, type: Type): Binding.Local = frame.newBinding(name, type)
+    override fun newBinding(name: String, type: Type, mutable: Boolean): Binding.Local = frame.newBinding(name, type, mutable)
     override fun newScope() = LocalFrameChildScope(this, frame)
 }

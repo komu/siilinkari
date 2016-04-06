@@ -127,6 +127,16 @@ class TypeCheckerTest {
     }
 
     @Test
+    fun assignmentToImmutableVariables() {
+        assertStatementTypeCheckFails("""
+            if (true) {
+                val x = 4;
+                x = 2;
+            }
+        """)
+    }
+
+    @Test
     fun relationalOperatorsAreNotSupportedForUnit() {
         env.bind("foo", Type.Unit)
 

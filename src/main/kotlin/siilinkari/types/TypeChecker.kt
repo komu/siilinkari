@@ -104,14 +104,14 @@ fun Statement.typeCheck(env: StaticEnvironment): TypedStatement = when (this) {
         TypedStatement.Exp(expression.typeCheck(env))
     is Statement.Assign -> {
         val binding = env.lookupBinding(variable, location)
-        if (!binding.isAssignable)
-            throw TypeCheckException("can't assign to ${binding.name}", location)
+        if (!binding.mutable)
+            throw TypeCheckException("can't assign to immutable variable ${binding.name}", location)
         val typedLhs = expression.typeCheckExpected(binding.type, env)
         TypedStatement.Assign(binding, typedLhs)
     }
     is Statement.Var -> {
         val typed = expression.typeCheck(env)
-        val binding = env.bindType(variable, typed.type, location)
+        val binding = env.bindType(variable, typed.type, location, mutable)
         TypedStatement.Var(binding, typed)
     }
     is Statement.If -> {
@@ -134,9 +134,9 @@ fun Statement.typeCheck(env: StaticEnvironment): TypedStatement = when (this) {
 private fun StaticEnvironment.lookupBinding(name: String, location: SourceLocation): Binding =
     this[name] ?: throw TypeCheckException("unbound variable '$name'", location)
 
-private fun StaticEnvironment.bindType(name: String, type: Type, location: SourceLocation): Binding {
+private fun StaticEnvironment.bindType(name: String, type: Type, location: SourceLocation, mutable: Boolean): Binding {
     try {
-        return this.bind(name, type)
+        return this.bind(name, type, mutable)
     } catch (e: VariableAlreadyBoundException) {
         throw TypeCheckException("variable already bound '$name'", location)
     }
