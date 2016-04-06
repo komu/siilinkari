@@ -13,6 +13,7 @@ import siilinkari.vm.Evaluator
 fun main(args: Array<String>) {
 
     val console = ConsoleReader()
+    console.expandEvents = false
 
     val evaluator = Evaluator()
     registerRuntimeFunctions(evaluator)
