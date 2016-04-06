@@ -5,5 +5,5 @@ package siilinkari.lexer
  *
  * Syntax errors can originate either in the lexer or the parser.
  */
-class SyntaxErrorException(val errorMessage: String, val sourceLocation: SourceLocation) :
+open class SyntaxErrorException(val errorMessage: String, val sourceLocation: SourceLocation) :
         RuntimeException("$errorMessage\n${sourceLocation.toLongString()}")

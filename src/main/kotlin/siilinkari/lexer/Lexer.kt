@@ -129,14 +129,14 @@ class Lexer(private val source: String, private val file: String = "<unknown>") 
             }
         }
 
-        fail("unexpected end of string")
+        unexpectedEnd()
     }
 
     /**
      * Returns the next character in source code without consuming it.
      */
     private fun peekChar(): Char {
-        if (!hasMore) fail("unexpected end of input")
+        if (!hasMore) unexpectedEnd()
         return source[position]
     }
 
@@ -177,7 +177,7 @@ class Lexer(private val source: String, private val file: String = "<unknown>") 
      * this method takes care of adjusting [line] and [column] accordingly.
      */
     private fun readChar(): Char {
-        if (!hasMore) fail("unexpected end of input")
+        if (!hasMore) unexpectedEnd()
 
         val ch = source[position++]
 
@@ -220,4 +220,10 @@ class Lexer(private val source: String, private val file: String = "<unknown>") 
      */
     private fun fail(message: String): Nothing =
         throw SyntaxErrorException(message, currentSourceLocation())
+
+    /**
+     * Throws [UnexpectedEndOfInputException] with current [SourceLocation].
+     */
+    private fun unexpectedEnd(): Nothing =
+        throw UnexpectedEndOfInputException(currentSourceLocation())
 }
