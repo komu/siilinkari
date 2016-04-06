@@ -44,6 +44,8 @@ abstract class StaticEnvironment(private val parent: StaticEnvironment?) {
      * environment are not visible outside.
      */
     abstract fun newScope(): StaticEnvironment
+
+    fun bindingNames(): Set<String> = bindings.keys
 }
 
 /**

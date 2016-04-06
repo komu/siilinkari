@@ -59,6 +59,9 @@ class Evaluator {
         return evaluateSegment(translated)
     }
 
+    fun bindingsNames(): Set<String> =
+        globalTypeEnvironment.bindingNames()
+
     /**
      * Translates given code to opcodes and returns string representation of the opcodes.
      */

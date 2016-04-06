@@ -17,6 +17,16 @@ fun main(args: Array<String>) {
     val evaluator = Evaluator()
     registerRuntimeFunctions(evaluator)
 
+    console.addCompleter { s, i, result ->
+        val word = s.subSequence(0, i).takeLastWhile { it.isJavaIdentifierPart() }
+
+        for (binding in evaluator.bindingsNames())
+            if (binding.startsWith(word, ignoreCase = true))
+                result += binding
+
+        i - word.length
+    }
+
     println("Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.")
 
     while (true) {
