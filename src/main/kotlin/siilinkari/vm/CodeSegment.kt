@@ -32,6 +32,9 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>) {
             opCodes += op
         }
 
+        val currentAddress: Int
+            get() = opCodes.size
+
         /**
          * Adds a new label. This initializes the label to the current address.
          */

@@ -78,10 +78,10 @@ The evaluator consists of the following pipeline:
           o--------- translator    siilinkari.translator.Translator
           |
           v          
-      IR opcodes                   siilinkari.translator.{IR, IRBuilder}
+      IR opcodes                   siilinkari.translator.{IR, BasicBlock}
           |
           |
-          o--------- address       siilinkari.translator.IRBuilder
+          o--------- address       siilinkari.translator.TranslateIRToOpCodes
           |          assignment
           |  
           v          

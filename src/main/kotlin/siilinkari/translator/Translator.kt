@@ -5,29 +5,26 @@ import siilinkari.env.Binding
 import siilinkari.types.TypedExpression
 import siilinkari.types.TypedStatement
 import siilinkari.vm.CodeSegment
-import siilinkari.vm.Label
 
 /**
  * Translates [TypedStatement] to [CodeSegment] containing OpCodes for vm to run.
  */
 fun TypedStatement.translateTo(code: CodeSegment.Builder) {
-    val translator = Translator()
-    translator.apply { emitCode() }
-    translator.code.buildTo(code)
+    val startBlock = BasicBlock()
+    Translator(startBlock).apply { emitCode() }
+    translateBasicBlocksTo(startBlock, code)
 }
 
 /**
  * Translates [TypedExpression] to [CodeSegment] containing OpCodes for vm to run.
  */
 fun TypedExpression.translateTo(code: CodeSegment.Builder) {
-    val translator = Translator()
-    translator.apply { emitCode() }
-    translator.code.buildTo(code)
+    val startBlock = BasicBlock()
+    Translator(startBlock).apply { emitCode() }
+    translateBasicBlocksTo(startBlock, code)
 }
 
-class Translator() {
-
-    val code = IRBuilder()
+class Translator(private var currentBlock: BasicBlock) {
 
     fun TypedStatement.emitCode() {
         when (this) {
@@ -36,7 +33,7 @@ class Translator() {
 
                 // If we are evaluating an expression as a statement,
                 // we need to discard the result of the expression.
-                code += IR.Pop
+                currentBlock += IR.Pop
             }
             is TypedStatement.StatementList ->
                 statements.forEach { it.emitCode() }
@@ -49,31 +46,52 @@ class Translator() {
                 variable.emitStore()
             }
             is TypedStatement.If -> {
-                val falseBranch = Label()
-
                 condition.emitCode()
-                code += IR.JumpIfFalse(falseBranch)
-                consequent.emitCode()
+
+                val afterBlock = BasicBlock()
+
                 if (alternative != null) {
-                    val afterIf = Label()
-                    code += IR.Jump(afterIf)
-                    code += falseBranch
+                    val trueBlock = BasicBlock()
+                    val falseBlock = BasicBlock()
+
+                    currentBlock.endWithBranch(trueBlock, falseBlock)
+
+                    currentBlock = trueBlock
+                    consequent.emitCode()
+                    trueBlock.endWithJumpTo(afterBlock)
+
+                    currentBlock = falseBlock
                     alternative.emitCode()
-                    code += afterIf
+                    falseBlock.endWithJumpTo(afterBlock)
+
                 } else {
-                    code += falseBranch
+                    val trueBlock = BasicBlock()
+
+                    currentBlock.endWithBranch(trueBlock, afterBlock)
+
+                    currentBlock = trueBlock
+                    consequent.emitCode()
+                    trueBlock.endWithJumpTo(afterBlock)
                 }
+
+                currentBlock = afterBlock
             }
             is TypedStatement.While -> {
-                val beforeLoop = Label()
-                val afterLoop = Label()
+                val loopHead = BasicBlock()
+                val loopBody = BasicBlock()
+                val afterLoop = BasicBlock()
 
-                code += beforeLoop
+                currentBlock.endWithJumpTo(loopHead)
+
+                currentBlock = loopHead
                 condition.emitCode()
-                code += IR.JumpIfFalse(afterLoop)
+                loopHead.endWithBranch(loopBody, afterLoop)
+
+                currentBlock = loopBody
                 body.emitCode()
-                code += IR.Jump(beforeLoop)
-                code += afterLoop
+                loopBody.endWithJumpTo(loopHead)
+
+                currentBlock = afterLoop
             }
             else -> error("unknown statement: $this")
         }
@@ -84,17 +102,17 @@ class Translator() {
             is TypedExpression.Ref ->
                 binding.emitLoad()
             is TypedExpression.Lit ->
-                code += IR.Push(value)
+                currentBlock += IR.Push(value)
             is TypedExpression.Not -> {
                 exp.emitCode()
-                code += IR.Not
+                currentBlock += IR.Not
             }
             is TypedExpression.Binary ->
                 emitCode()
             is TypedExpression.Call -> {
                 args.asReversed().forEach { it.emitCode() }
                 func.emitCode()
-                code += IR.Call
+                currentBlock += IR.Call
             }
             else ->
                 error("unknown expression: $this")
@@ -105,11 +123,11 @@ class Translator() {
         lhs.emitCode()
         rhs.emitCode()
         when (this) {
-            is TypedExpression.Binary.Plus         -> code += IR.Add
-            is TypedExpression.Binary.Minus        -> code += IR.Subtract
-            is TypedExpression.Binary.Multiply     -> code += IR.Multiply
-            is TypedExpression.Binary.Divide       -> code += IR.Divide
-            is TypedExpression.Binary.ConcatString -> code += IR.ConcatString
+            is TypedExpression.Binary.Plus         -> currentBlock += IR.Add
+            is TypedExpression.Binary.Minus        -> currentBlock += IR.Subtract
+            is TypedExpression.Binary.Multiply     -> currentBlock += IR.Multiply
+            is TypedExpression.Binary.Divide       -> currentBlock += IR.Divide
+            is TypedExpression.Binary.ConcatString -> currentBlock += IR.ConcatString
             is TypedExpression.Binary.Relational   -> op.emitCode()
             else                                   -> error("unknown expression: $this")
         }
@@ -117,17 +135,17 @@ class Translator() {
 
     private fun RelationalOp.emitCode() {
         when (this) {
-            RelationalOp.Equals             -> code += IR.Equal
-            RelationalOp.NotEquals          -> { code += IR.Equal; code += IR.Not }
-            RelationalOp.LessThan           -> code += IR.LessThan
-            RelationalOp.LessThanOrEqual    -> code += IR.LessThanOrEqual
-            RelationalOp.GreaterThan        -> { code += IR.LessThanOrEqual; code += IR.Not }
-            RelationalOp.GreaterThanOrEqual -> { code += IR.LessThan; code += IR.Not }
+            RelationalOp.Equals             -> currentBlock += IR.Equal
+            RelationalOp.NotEquals          -> { currentBlock += IR.Equal; currentBlock += IR.Not }
+            RelationalOp.LessThan           -> currentBlock += IR.LessThan
+            RelationalOp.LessThanOrEqual    -> currentBlock += IR.LessThanOrEqual
+            RelationalOp.GreaterThan        -> { currentBlock += IR.LessThanOrEqual; currentBlock += IR.Not }
+            RelationalOp.GreaterThanOrEqual -> { currentBlock += IR.LessThan; currentBlock += IR.Not }
         }
     }
 
     private fun Binding.emitStore() {
-        code += when (this) {
+        currentBlock += when (this) {
             is Binding.Local    -> IR.StoreLocal(index, name)
             is Binding.Global   -> IR.StoreGlobal(index, name)
             is Binding.Argument -> error("can't store into arguments")
@@ -135,7 +153,7 @@ class Translator() {
     }
 
     private fun Binding.emitLoad() {
-        code += when (this) {
+        currentBlock += when (this) {
             is Binding.Local    -> IR.LoadLocal(index, name)
             is Binding.Global   -> IR.LoadGlobal(index, name)
             is Binding.Argument -> IR.LoadArgument(index, name)

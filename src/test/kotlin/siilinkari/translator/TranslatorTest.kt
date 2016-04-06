@@ -24,16 +24,18 @@ class TranslatorTest {
             1 Push 1
             2 Add
             3 StoreLocal 0 ; x
-            4 LoadLocal 0 ; x
-            5 Push 0
-            6 Equal
-            7 Not
-            8 JumpIfFalse 14
-            9 LoadLocal 0 ; x
-            10 Push 1
-            11 Subtract
-            12 StoreLocal 0 ; x
-            13 Jump 4
+            4 Jump 5
+            5 LoadLocal 0 ; x
+            6 Push 0
+            7 Equal
+            8 Not
+            9 JumpIfFalse 16
+            10 Jump 11
+            11 LoadLocal 0 ; x
+            12 Push 1
+            13 Subtract
+            14 StoreLocal 0 ; x
+            15 Jump 5
             """)
     }
 

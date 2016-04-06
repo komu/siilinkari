@@ -1,7 +1,6 @@
 package siilinkari.translator
 
 import siilinkari.objects.Value
-import siilinkari.vm.Label
 
 /**
  * Intermediate representation that is quite close to executed opcodes,
@@ -44,13 +43,5 @@ sealed class IR {
 
     class StoreGlobal(val index: Int, val name: String) : IR() {
         override fun toString() = "StoreGlobal $index ; $name"
-    }
-
-    class Jump(val label: Label) : IR() {
-        override fun toString() = "Jump $label"
-    }
-
-    class JumpIfFalse(val label: Label) : IR() {
-        override fun toString() = "JumpIfFalse $label"
     }
 }
