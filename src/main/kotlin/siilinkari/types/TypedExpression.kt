@@ -20,19 +20,28 @@ import siilinkari.objects.Value
 sealed class TypedExpression(val type: Type) {
 
     /** Reference to a variable. */
-    class Ref(val binding: Binding) : TypedExpression(binding.type)
+    class Ref(val binding: Binding) : TypedExpression(binding.type) {
+        override fun toString() = "[Ref ${binding.name}]"
+    }
 
     /** Literal value */
-    class Lit(val value: Value, type: Type) : TypedExpression(type)
+    class Lit(val value: Value, type: Type) : TypedExpression(type) {
+        override fun toString() = "[Lit ${value.repr()}]"
+    }
 
     /** Logical not. */
-    class Not(val exp: TypedExpression): TypedExpression(Type.Boolean)
+    class Not(val exp: TypedExpression): TypedExpression(Type.Boolean) {
+        override fun toString() = "[Not $exp]"
+    }
 
     /** Function call. */
-    class Call(val func: TypedExpression, val args: List<TypedExpression>, type: Type) : TypedExpression(type)
+    class Call(val func: TypedExpression, val args: List<TypedExpression>, type: Type) : TypedExpression(type) {
+        override fun toString() = "[Call $func $args]"
+    }
 
     /** Binary operators. */
     sealed class Binary(val lhs: TypedExpression, val rhs: TypedExpression, type: Type): TypedExpression(type) {
+        override fun toString() = "[${javaClass.simpleName} $lhs $rhs]"
 
         /** Numeric addition */
         class Plus(lhs: TypedExpression, rhs: TypedExpression, type: Type) : Binary(lhs, rhs, type)
@@ -50,6 +59,8 @@ sealed class TypedExpression(val type: Type) {
         class ConcatString(lhs: TypedExpression, rhs: TypedExpression) : Binary(lhs, rhs, Type.String)
 
         /** =, !=, <, >, <=, >= */
-        class Relational(val op: RelationalOp, lhs: TypedExpression, rhs: TypedExpression) : Binary(lhs, rhs, Type.Boolean)
+        class Relational(val op: RelationalOp, lhs: TypedExpression, rhs: TypedExpression) : Binary(lhs, rhs, Type.Boolean) {
+            override fun toString() = "[$op $lhs $rhs]"
+        }
     }
 }

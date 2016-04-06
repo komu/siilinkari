@@ -10,10 +10,27 @@ import siilinkari.env.Binding
  * @see TypedExpression
  */
 sealed class TypedStatement {
-    class Exp(val expression: TypedExpression) : TypedStatement()
-    class Assign(val variable: Binding, val expression: TypedExpression) : TypedStatement()
-    class Var(val variable: Binding, val expression: TypedExpression) : TypedStatement()
-    class If(val condition: TypedExpression, val consequent: TypedStatement, val alternative: TypedStatement?) : TypedStatement()
-    class While(val condition: TypedExpression, val body: TypedStatement) : TypedStatement()
-    class StatementList(val statements: List<TypedStatement>) : TypedStatement()
+    class Exp(val expression: TypedExpression) : TypedStatement() {
+        override fun toString() = expression.toString()
+    }
+
+    class Assign(val variable: Binding, val expression: TypedExpression) : TypedStatement() {
+        override fun toString() = "[Assign $variable $expression]"
+    }
+
+    class Var(val variable: Binding, val expression: TypedExpression) : TypedStatement() {
+        override fun toString() = "Var $variable $expression]"
+    }
+
+    class If(val condition: TypedExpression, val consequent: TypedStatement, val alternative: TypedStatement?) : TypedStatement() {
+        override fun toString() = "[If $condition $consequent ${alternative ?: "[]"}]"
+    }
+
+    class While(val condition: TypedExpression, val body: TypedStatement) : TypedStatement() {
+        override fun toString() = "[While $condition $body]"
+    }
+
+    class StatementList(val statements: List<TypedStatement>) : TypedStatement() {
+        override fun toString() = "[StatementList $statements]"
+    }
 }
