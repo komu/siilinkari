@@ -35,6 +35,11 @@ fun main(args: Array<String>) {
         if (line == "") continue
         if (line == "exit") break
 
+        if (line == ":trace") {
+            evaluator.trace = !evaluator.trace;
+            continue
+        }
+
         if (!line.endsWith(';') && !line.endsWith("}"))
             line += ';'
 

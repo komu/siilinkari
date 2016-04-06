@@ -20,6 +20,7 @@ class Evaluator {
     private val globalData = DataSegment()
     private val globalTypeEnvironment = GlobalStaticEnvironment()
     private val globalCode = CodeSegment.Builder()
+    var trace = false;
 
     /**
      * Binds a global name to given value.
@@ -125,6 +126,8 @@ class Evaluator {
 
         evalLoop@while (true) {
             val op = code[state.pc++]
+            if (trace)
+                println(op)
             when (op) {
                 OpCode.Pop              -> state.popValue()
                 OpCode.Not              -> state.push(!state.pop<Value.Bool>())
