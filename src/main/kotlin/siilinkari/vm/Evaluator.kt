@@ -2,10 +2,13 @@ package siilinkari.vm
 
 import siilinkari.ast.FunctionDefinition
 import siilinkari.env.GlobalStaticEnvironment
+import siilinkari.lexer.LookaheadLexer
 import siilinkari.lexer.SyntaxErrorException
+import siilinkari.lexer.Token.Keyword
 import siilinkari.objects.Value
 import siilinkari.optimizer.optimize
 import siilinkari.parser.parseExpression
+import siilinkari.parser.parseFunctionDefinition
 import siilinkari.parser.parseStatement
 import siilinkari.translator.translateTo
 import siilinkari.types.TypedStatement
@@ -40,6 +43,12 @@ class Evaluator {
     }
 
     fun evaluateReplLine(code: String): Value {
+        if (LookaheadLexer(code).nextTokenIs(Keyword.Fun)) {
+            val definition = parseFunctionDefinition(code)
+            bindFunction(definition)
+            return Value.Unit
+        }
+
         try {
             parseExpression(code)
             return evaluateExpression(code)
