@@ -1,5 +1,6 @@
 package siilinkari.vm
 
+import siilinkari.ast.FunctionDefinition
 import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.lexer.SyntaxErrorException
 import siilinkari.objects.Value
@@ -7,10 +8,10 @@ import siilinkari.optimizer.optimize
 import siilinkari.parser.parseExpression
 import siilinkari.parser.parseStatement
 import siilinkari.translator.translateTo
-import siilinkari.types.Type
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
 import siilinkari.types.typeCheck
+import siilinkari.types.typeCheckExpected
 
 /**
  * Evaluator for opcodes.
@@ -32,10 +33,10 @@ class Evaluator {
     }
 
     /**
-     * Binds a global function using given expression as body.
+     * Compiles and binds a global function.
      */
-    fun bindFunction(name: String, args: List<Pair<String, Type>>, code: String) {
-        bind(name, createFunctionFromExpression(args, code), mutable = false)
+    fun bindFunction(func: FunctionDefinition) {
+        bind(func.name, createFunction(func), mutable = false)
     }
 
     fun evaluateReplLine(code: String): Value {
@@ -100,14 +101,14 @@ class Evaluator {
     /**
      * Creates a callable function from given expression.
      */
-    private fun createFunctionFromExpression(args: List<Pair<String, Type>>, code: String): Value.Function {
-        val typedExp = parseExpression(code).typeCheck(globalTypeEnvironment.newScope(args)).optimize()
+    private fun createFunction(func: FunctionDefinition): Value.Function {
+        val args = func.args
+        val typedExp = func.body.typeCheckExpected(func.returnType, globalTypeEnvironment.newScope(args)).optimize()
 
         val codeSegment = CodeSegment.Builder()
         typedExp.translateTo(codeSegment)
 
         val argTypes = args.map { it.second }
-        val signature = Type.Function(argTypes, typedExp.type)
 
         val finalCode = CodeSegment.Builder()
         finalCode += OpCode.Enter(codeSegment.frameSize)
@@ -117,7 +118,7 @@ class Evaluator {
 
         val address = globalCode.addRelocated(finalCode)
 
-        return Value.Function.Compound(signature, address)
+        return Value.Function.Compound(func.name, func.signature, address)
     }
 
     /**

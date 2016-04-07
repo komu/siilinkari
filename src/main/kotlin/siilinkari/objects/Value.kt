@@ -81,8 +81,8 @@ sealed class Value {
         /**
          * Function whose implementation is byte-code.
          */
-        class Compound(signature: Type.Function, val address: Int) : Function(signature) {
-            override fun toString() = "Function(address=$address)"
+        class Compound(val name: kotlin.String, signature: Type.Function, val address: Int) : Function(signature) {
+            override fun toString() = "Function(name=$name, address=$address)"
         }
 
         /**

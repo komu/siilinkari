@@ -96,7 +96,7 @@ private fun TypedExpression.expectAssignableTo(expectedType: Type, location: Sou
     else
         throw TypeCheckException("expected type $expectedType, but was $type", location)
 
-private fun Expression.typeCheckExpected(expectedType: Type, env: StaticEnvironment): TypedExpression =
+fun Expression.typeCheckExpected(expectedType: Type, env: StaticEnvironment): TypedExpression =
     typeCheck(env).expectAssignableTo(expectedType, location)
 
 fun Statement.typeCheck(env: StaticEnvironment): TypedStatement = when (this) {

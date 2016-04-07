@@ -1,8 +1,10 @@
 package siilinkari.vm
 
 import org.junit.Test
+import siilinkari.ast.FunctionDefinition
 import siilinkari.objects.Value
 import siilinkari.objects.value
+import siilinkari.parser.parseExpression
 import siilinkari.types.Type
 import siilinkari.types.TypeCheckException
 import kotlin.test.assertEquals
@@ -11,6 +13,8 @@ import kotlin.test.assertFailsWith
 class EvaluatorTest {
 
     val evaluator = Evaluator()
+
+    private val square = FunctionDefinition("square", listOf("x" to Type.Int), Type.Int, parseExpression("x * x"))
 
     @Test
     fun literalEvaluation() {
@@ -116,13 +120,13 @@ class EvaluatorTest {
 
     @Test
     fun directCalls() {
-        evaluator.bindFunction("square", listOf("x" to Type.Int), "x * x")
+        evaluator.bindFunction(square)
         assertExpressionEvaluation("square(4)", 16.value)
     }
 
     @Test
     fun functionCallsThroughLocalVariable() {
-        evaluator.bindFunction("square", listOf("x" to Type.Int), "x * x")
+        evaluator.bindFunction(square)
         evaluator.bind("result", 0.value)
 
         evaluateStatement("""
@@ -137,13 +141,13 @@ class EvaluatorTest {
 
     @Test
     fun functionCallsThroughExpression() {
-        evaluator.bindFunction("square", listOf("x" to Type.Int), "x * x")
+        evaluator.bindFunction(square)
         assertExpressionEvaluation("(square)(6)", 36.value)
     }
 
     @Test
     fun expressionFunctions() {
-        evaluator.bindFunction("sub", listOf("x" to Type.Int, "y" to Type.Int), "x - y")
+        evaluator.bindFunction(FunctionDefinition("sub", listOf("x" to Type.Int, "y" to Type.Int), Type.Int, parseExpression("x - y")))
 
         assertExpressionEvaluation("sub(7, 4)", 3.value)
     }
