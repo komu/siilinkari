@@ -81,6 +81,7 @@ sealed class Token {
         object LeftBrace : Punctuation("{")
         object RightBrace : Punctuation("}")
         object Equal : Punctuation("=")
+        object Colon : Punctuation(":")
         object Semicolon : Punctuation(";")
         object Comma : Punctuation(",")
     }

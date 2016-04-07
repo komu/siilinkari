@@ -92,6 +92,12 @@ class ParserTest {
         assertParseExpression("(baz)()", "[Call [Ref baz] []]")
     }
 
+    @Test
+    fun functionDefinition() {
+        assertParseFunctionDefinition("fun square(x: Int, y: Int): Int = x * x",
+            "FunctionDefinition(name=square, args=[(x, Int), (y, Int)], returnType=Int, body=[Multiply [Ref x] [Ref x]])")
+    }
+
     private fun assertSyntaxError(code: String) {
         assertFailsWith<SyntaxErrorException> {
             val stmt = parseStatement(code)
@@ -107,6 +113,12 @@ class ParserTest {
 
     private fun assertParseExpression(source: String, expected: String) {
         val expression = parseExpression(source)
+
+        assertEquals(expected, expression.toString(), source)
+    }
+
+    private fun assertParseFunctionDefinition(source: String, expected: String) {
+        val expression = parseFunctionDefinition(source)
 
         assertEquals(expected, expression.toString(), source)
     }

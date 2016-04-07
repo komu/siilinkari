@@ -54,6 +54,7 @@ class LexerTest {
         assertTokens("{", Punctuation.LeftBrace)
         assertTokens("}", Punctuation.RightBrace)
         assertTokens("=", Punctuation.Equal)
+        assertTokens(":", Punctuation.Colon)
         assertTokens(";", Punctuation.Semicolon)
         assertTokens(",", Punctuation.Comma)
     }

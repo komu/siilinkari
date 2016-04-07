@@ -2,11 +2,13 @@ package siilinkari.parser
 
 import siilinkari.ast.Expression
 import siilinkari.ast.Expression.Binary
+import siilinkari.ast.FunctionDefinition
 import siilinkari.ast.RelationalOp
 import siilinkari.ast.Statement
 import siilinkari.lexer.*
 import siilinkari.lexer.Token.*
 import siilinkari.lexer.Token.Punctuation.LeftBrace
+import siilinkari.types.Type
 import java.util.*
 
 /**
@@ -26,6 +28,12 @@ fun parseExpression(code: String): Expression =
     parseComplete(code) { it.parseExpression() }
 
 /**
+ * Parses a function definition.
+ */
+fun parseFunctionDefinition(code: String): FunctionDefinition =
+    parseComplete(code) { it.parseFunctionDefinition() }
+
+/**
  * Executes parser on code and verifies that it consumes all input.
  *
  * @throws SyntaxErrorException if the parser fails or if it did not consume all input
@@ -43,6 +51,23 @@ private fun <T> parseComplete(code: String, callback: (Parser) -> T): T {
 private class Parser(lexer: Lexer) {
 
     private val lexer = LookaheadLexer(lexer)
+
+    /**
+     * ```
+     * functionDefinition :== "fun" name "(" args ")" ":" type "=" expression
+     * ```
+     */
+    fun parseFunctionDefinition(): FunctionDefinition {
+        lexer.expect(Keyword.Fun)
+        val name = parseName().first
+        val args = parseArgumentDefinitionList()
+        lexer.expect(Punctuation.Colon)
+        val returnType = parseType()
+        lexer.expect(Punctuation.Equal)
+        val body = parseExpression()
+
+        return FunctionDefinition(name, args, returnType, body)
+    }
 
     /**
      * ```
@@ -283,10 +308,40 @@ private class Parser(lexer: Lexer) {
             }
         }
 
+    private fun parseArgumentDefinitionList(): List<Pair<String, Type>> =
+        inParens {
+            if (lexer.nextTokenIs(Token.Punctuation.RightParen))
+                emptyList()
+            else {
+                val args = ArrayList<Pair<String, Type>>()
+                do {
+                    val name = parseName().first
+                    lexer.expect(Punctuation.Colon)
+                    val type = parseType()
+                    args += name to type
+                } while (lexer.readNextIf(Token.Punctuation.Comma))
+                args
+            }
+        }
+
     private fun parseName(): Pair<String, SourceLocation> {
         val (token, location) = lexer.readExpected<Token.Identifier>()
 
         return Pair(token.name, location)
+    }
+
+    private fun parseType(): Type {
+        val (token, location) = lexer.readExpected<Token.Identifier>()
+
+        val type = when (token.name) {
+            "Unit"     -> Type.Unit
+            "Boolean"  -> Type.Boolean
+            "Int"      -> Type.Int
+            "String"   -> Type.String
+            else -> fail(location, "unknown type name: '${token.name}'")
+        }
+
+        return type
     }
 
     private inline fun <T> inParens(parser: () -> T): T =
