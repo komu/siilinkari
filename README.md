@@ -81,7 +81,7 @@ The evaluator consists of the following pipeline:
       IR opcodes                   siilinkari.translator.{IR, BasicBlock}
           |
           |
-          o--------- peephole      siilinkari.optimizer.PeepholeOptimizer
+          o--------- peephole      siilinkari.optimizer.peepholeOptimize
           |          optimization
           |  
           v          
