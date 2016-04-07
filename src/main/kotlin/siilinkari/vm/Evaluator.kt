@@ -39,7 +39,16 @@ class Evaluator {
      * Compiles and binds a global function.
      */
     fun bindFunction(func: FunctionDefinition) {
-        bind(func.name, createFunction(func), mutable = false)
+        // We have to create the binding into global environment before calling createFunction
+        // because the function might want to call itself recursively. But if createFunction fails
+        // (most probably to type-checking), we need to unbind the binding.
+        val binding = globalTypeEnvironment.bind(func.name, func.signature, mutable = false)
+        try {
+            globalData[binding.index] = createFunction(func)
+        } catch (e: Exception) {
+            globalTypeEnvironment.unbind(func.name)
+            throw e
+        }
     }
 
     fun evaluateReplLine(code: String): Value {
@@ -112,6 +121,7 @@ class Evaluator {
      */
     private fun createFunction(func: FunctionDefinition): Value.Function {
         val args = func.args
+
         val typedExp = func.body.typeCheckExpected(func.returnType, globalTypeEnvironment.newScope(args)).optimize()
 
         val codeSegment = CodeSegment.Builder()

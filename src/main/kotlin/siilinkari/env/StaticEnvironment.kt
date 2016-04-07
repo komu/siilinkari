@@ -32,6 +32,13 @@ abstract class StaticEnvironment(private val parent: StaticEnvironment?) {
     }
 
     /**
+     * Removes this binding from global environment, allowing it to be reused.
+     */
+    fun unbind(name: String) {
+        bindings.remove(name)
+    }
+
+    /**
      * Create a new binding to be installed in this environment.
      */
     protected abstract fun newBinding(name: String, type: Type, mutable: Boolean): Binding
