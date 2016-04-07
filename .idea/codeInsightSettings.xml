@@ -17,6 +17,7 @@
       <name>javax.swing</name>
       <name>javax.xml</name>
       <name>jdk</name>
+      <name>jline.TerminalFactory.Type</name>
       <name>sun</name>
     </excluded-names>
   </component>
