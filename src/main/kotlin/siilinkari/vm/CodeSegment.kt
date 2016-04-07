@@ -36,13 +36,21 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>) {
             get() = opCodes.size
 
         /**
+         * Adds instructions of [builder] to this builder, relocating all labels
+         * as needed.
+         */
+        fun addRelocated(builder: Builder): Int = addRelocated(builder.opCodes)
+
+        /**
          * Adds instructions of [segment] to this builder, relocating all labels
          * as needed.
          */
-        fun addRelocated(segment: CodeSegment.Builder): Int {
+        fun addRelocated(segment: CodeSegment) = addRelocated(segment.opCodes)
+
+        private fun addRelocated(ops: List<OpCode>): Int {
             val address = opCodes.size
 
-            for (op in segment.opCodes)
+            for (op in ops)
                 opCodes += op.relocate(address)
 
             return address

@@ -10,11 +10,11 @@ import siilinkari.optimizer.optimize
 import siilinkari.parser.parseExpression
 import siilinkari.parser.parseFunctionDefinition
 import siilinkari.parser.parseStatement
+import siilinkari.translator.FunctionTranslator
 import siilinkari.translator.translateTo
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
 import siilinkari.types.typeCheck
-import siilinkari.types.typeCheckExpected
 
 /**
  * Evaluator for opcodes.
@@ -25,6 +25,7 @@ class Evaluator {
     private val globalData = DataSegment()
     private val globalTypeEnvironment = GlobalStaticEnvironment()
     private val globalCode = CodeSegment.Builder()
+    private val functionTranslator = FunctionTranslator(globalTypeEnvironment)
     var trace = false;
 
     /**
@@ -44,7 +45,9 @@ class Evaluator {
         // (most probably to type-checking), we need to unbind the binding.
         val binding = globalTypeEnvironment.bind(func.name, func.signature, mutable = false)
         try {
-            globalData[binding.index] = createFunction(func)
+            val code = functionTranslator.translateFunction(func)
+            val address = globalCode.addRelocated(code)
+            globalData[binding.index] = Value.Function.Compound(func.name, func.signature, address)
         } catch (e: Exception) {
             globalTypeEnvironment.unbind(func.name)
             throw e
@@ -114,30 +117,6 @@ class Evaluator {
         }
         translated += OpCode.Quit
         return translated
-    }
-
-    /**
-     * Creates a callable function from given expression.
-     */
-    private fun createFunction(func: FunctionDefinition): Value.Function {
-        val args = func.args
-
-        val typedExp = func.body.typeCheckExpected(func.returnType, globalTypeEnvironment.newScope(args)).optimize()
-
-        val codeSegment = CodeSegment.Builder()
-        typedExp.translateTo(codeSegment)
-
-        val argTypes = args.map { it.second }
-
-        val finalCode = CodeSegment.Builder()
-        finalCode += OpCode.Enter(codeSegment.frameSize)
-        finalCode.addRelocated(codeSegment)
-        finalCode += OpCode.Leave(argTypes.size)
-        finalCode += OpCode.Ret
-
-        val address = globalCode.addRelocated(finalCode)
-
-        return Value.Function.Compound(func.name, func.signature, address)
     }
 
     /**
