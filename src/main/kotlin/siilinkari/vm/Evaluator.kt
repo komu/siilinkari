@@ -92,10 +92,9 @@ class Evaluator {
         try {
             val (signature, code) = functionTranslator.translateFunction(func, optimize)
             val address = globalCode.addRelocated(code)
-            if (binding != null)
-                globalTypeEnvironment.unbind(func.name)
+            if (binding == null)
+                binding = globalTypeEnvironment.bind(func.name, signature, mutable = false)
 
-            binding = globalTypeEnvironment.bind(func.name, signature, mutable = false)
             globalData[binding.index] = Value.Function.Compound(func.name, signature, address)
         } catch (e: Exception) {
             if (binding != null)
