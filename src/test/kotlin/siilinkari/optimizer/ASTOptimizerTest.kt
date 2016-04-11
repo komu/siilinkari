@@ -32,7 +32,7 @@ class ASTOptimizerTest {
 
         assertOptimizedStatement("if (true) { foo(); }", "[Call [Ref foo] []]")
         assertOptimizedStatement("if (true) { foo(); } else { bar(); }", "[Call [Ref foo] []]")
-        assertOptimizedStatement("if (false) { foo(); }", "[StatementList []]")
+        assertOptimizedStatement("if (false) { foo(); }", "[ExpressionList []]")
         assertOptimizedStatement("if (false) { foo(); } else { bar(); }", "[Call [Ref bar] []]")
         assertOptimizedStatement("if (1 == 2) { foo(); } else { bar(); }", "[Call [Ref bar] []]")
     }
@@ -41,15 +41,15 @@ class ASTOptimizerTest {
     fun whileFalse() {
         env.bind("foo", Type.Function(emptyList(), Type.Unit))
 
-        assertOptimizedStatement("while (false) { foo(); }", "[StatementList []]")
-        assertOptimizedStatement("while (1 == 2) { foo(); }", "[StatementList []]")
+        assertOptimizedStatement("while (false) { foo(); }", "[ExpressionList []]")
+        assertOptimizedStatement("while (1 == 2) { foo(); }", "[ExpressionList []]")
     }
 
     @Test
     fun propagateConstantVariables() {
         env.bind("foo", Type.Function(listOf(Type.String), Type.Unit))
         assertOptimizedStatement("""if (true) { val s = "hello"; foo(s + ", world!"); }""",
-                """[StatementList [Var [Local 0 (s)] [Lit "hello"]], [Call [Ref foo] [[Lit "hello, world!"]]]]]""")
+                """[ExpressionList [[Var [Local 0 (s)] [Lit "hello"]], [Call [Ref foo] [[Lit "hello, world!"]]]]]""")
     }
 
     @Test
@@ -57,13 +57,13 @@ class ASTOptimizerTest {
     fun propagateEffectivelyConstantVariables() {
         env.bind("foo", Type.Function(listOf(Type.String), Type.Unit))
         assertOptimizedStatement("""if (true) { var s = "hello"; foo(s + ", world!"); }""",
-                """[StatementList [Var [Local 0 (s)] [Lit "hello"]], [Call [Ref foo] [[Lit "hello, world!"]]]]]""")
+                """[ExpressionList [Var [Local 0 (s)] [Lit "hello"]], [Call [Ref foo] [[Lit "hello, world!"]]]]]""")
     }
 
     @Test
     @Ignore("removing unused variables is not implemented")
     fun removeUnusedVariables() {
-        assertOptimizedStatement("if (true) { val s = 0; }", "[StatementList []]")
+        assertOptimizedStatement("if (true) { val s = 0; }", "[ExpressionList []]")
     }
 
     private fun assertOptimizedExpression(code: String, expectedAST: String) {

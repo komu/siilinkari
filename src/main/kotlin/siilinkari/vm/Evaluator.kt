@@ -14,7 +14,6 @@ import siilinkari.translator.FunctionTranslator
 import siilinkari.translator.IR
 import siilinkari.translator.translateToCode
 import siilinkari.translator.translateToIR
-import siilinkari.types.TypedStatement
 import siilinkari.types.type
 import siilinkari.types.typeCheck
 
@@ -94,12 +93,7 @@ class Evaluator {
             is ExpressionOrStatement.Stmt -> input.stmt
         }
 
-        val typedStmt = stmt.typeCheck(globalTypeEnvironment).optimize()
-
-        val blocks = if (typedStmt is TypedStatement.Exp && input is ExpressionOrStatement.Exp) {
-            typedStmt.expression.translateToIR()
-        } else
-            typedStmt.translateToIR()
+        val blocks = stmt.typeCheck(globalTypeEnvironment).optimize().translateToIR()
 
         blocks.optimize()
         blocks.end += IR.Quit

@@ -14,7 +14,7 @@ import siilinkari.objects.Value
  * to [TypedExpression.Binary.Plus], expressions `"foo" + "bar"` or `"foo" + 1` will be translated
  * to [TypedExpression.Binary.ConcatString].
  *
- * @see TypedStatement
+ * @see Stmt
  * @see Type
  */
 sealed class TypedExpression(val type: Type) {
@@ -64,6 +64,29 @@ sealed class TypedExpression(val type: Type) {
         /** =, !=, <, >, <=, >= */
         class Relational(val op: RelationalOp, lhs: TypedExpression, rhs: TypedExpression) : Binary(lhs, rhs, Type.Boolean) {
             override fun toString() = "[$op $lhs $rhs]"
+        }
+    }
+
+    sealed class Stmt : TypedExpression(Type.Unit) {
+
+        class Assign(val variable: Binding, val expression: TypedExpression) : Stmt() {
+            override fun toString() = "[Assign $variable $expression]"
+        }
+
+        class Var(val variable: Binding, val expression: TypedExpression) : Stmt() {
+            override fun toString() = "[Var $variable $expression]"
+        }
+
+        class If(val condition: TypedExpression, val consequent: TypedExpression, val alternative: TypedExpression?) : Stmt() {
+            override fun toString() = "[If $condition $consequent ${alternative ?: "[]"}]"
+        }
+
+        class While(val condition: TypedExpression, val body: TypedExpression) : Stmt() {
+            override fun toString() = "[While $condition $body]"
+        }
+
+        class ExpressionList(val statements: List<TypedExpression>) : Stmt() {
+            override fun toString() = "[ExpressionList $statements]"
         }
     }
 }

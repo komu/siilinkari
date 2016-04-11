@@ -5,15 +5,21 @@ import siilinkari.env.Binding
 import siilinkari.objects.Value
 import siilinkari.types.TypedExpression
 import siilinkari.types.TypedExpression.*
-import siilinkari.types.TypedStatement
-import siilinkari.types.TypedStatement.*
+import siilinkari.types.TypedExpression.Stmt.*
 import java.util.*
 
-fun TypedStatement.evaluateConstantExpressions(): TypedStatement = eval(ConstantBindingEnv())
 fun TypedExpression.evaluateConstantExpressions(): TypedExpression = eval(ConstantBindingEnv())
 
-private fun TypedStatement.eval(env: ConstantBindingEnv): TypedStatement = when (this) {
-    is Exp              -> Exp(expression.eval(env))
+private fun TypedExpression.eval(env: ConstantBindingEnv): TypedExpression = when (this) {
+    is Ref      -> env[binding]?.let { Lit(it, type) } ?: this
+    is Lit      -> this
+    is Call     -> Call(func.eval(env), args.map { it.eval(env) }, type)
+    is Not      -> eval(env)
+    is Binary   -> eval(env)
+    is Stmt     -> eval(env)
+}
+
+private fun TypedExpression.Stmt.eval(env: ConstantBindingEnv): TypedExpression = when (this) {
     is Assign           -> Assign(variable, expression.eval(env))
     is Var              -> {
         val value = expression.eval(env)
@@ -23,36 +29,28 @@ private fun TypedStatement.eval(env: ConstantBindingEnv): TypedStatement = when 
     }
     is If               -> eval(env)
     is While            -> eval(env)
-    is StatementList    -> {
+    is ExpressionList   -> {
         val childEnv = env.child()
-        statements.singleOrNull()?.eval(childEnv) ?: StatementList(statements.map { it.eval(childEnv) })
+        statements.singleOrNull()?.eval(childEnv) ?: ExpressionList(statements.map { it.eval(childEnv) })
     }
 }
 
-private fun TypedExpression.eval(env: ConstantBindingEnv): TypedExpression = when (this) {
-    is Ref      -> env[binding]?.let { Lit(it, type) } ?: this
-    is Lit      -> this
-    is Call     -> Call(func.eval(env), args.map { it.eval(env) }, type)
-    is Not      -> eval(env)
-    is Binary   -> eval(env)
-}
-
-private fun If.eval(env: ConstantBindingEnv): TypedStatement {
+private fun If.eval(env: ConstantBindingEnv): TypedExpression {
     val optCondition = condition.eval(env)
     return if (optCondition is Lit && optCondition.value is Value.Bool) {
         if (optCondition.value.value)
             consequent.eval(env.child())
         else
-            alternative?.eval(env.child()) ?: StatementList(emptyList())
+            alternative?.eval(env.child()) ?: ExpressionList(emptyList())
     } else {
         If(optCondition, consequent.eval(env.child()), alternative?.eval(env.child()));
     }
 }
 
-private fun While.eval(env: ConstantBindingEnv): TypedStatement {
+private fun While.eval(env: ConstantBindingEnv): TypedExpression {
     val optCondition = condition.eval(env)
     if (optCondition is Lit && optCondition.value is Value.Bool && optCondition.value.value == false) {
-        return StatementList(emptyList())
+        return ExpressionList(emptyList())
     }
     return While(optCondition, body.eval(env.child()))
 }

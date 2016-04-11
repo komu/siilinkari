@@ -99,35 +99,35 @@ private fun TypedExpression.expectAssignableTo(expectedType: Type, location: Sou
 fun Expression.typeCheckExpected(expectedType: Type, env: StaticEnvironment): TypedExpression =
     typeCheck(env).expectAssignableTo(expectedType, location)
 
-fun Statement.typeCheck(env: StaticEnvironment): TypedStatement = when (this) {
+fun Statement.typeCheck(env: StaticEnvironment): TypedExpression = when (this) {
     is Statement.Exp ->
-        TypedStatement.Exp(expression.typeCheck(env))
+        expression.typeCheck(env)
     is Statement.Assign -> {
         val binding = env.lookupBinding(variable, location)
         if (!binding.mutable)
             throw TypeCheckException("can't assign to immutable variable ${binding.name}", location)
         val typedLhs = expression.typeCheckExpected(binding.type, env)
-        TypedStatement.Assign(binding, typedLhs)
+        TypedExpression.Stmt.Assign(binding, typedLhs)
     }
     is Statement.Var -> {
         val typed = expression.typeCheck(env)
         val binding = env.bindType(variable, typed.type, location, mutable)
-        TypedStatement.Var(binding, typed)
+        TypedExpression.Stmt.Var(binding, typed)
     }
     is Statement.If -> {
         val typedCondition = condition.typeCheckExpected(Type.Boolean, env)
         val typedConsequent = consequent.typeCheck(env)
         val typedAlternative = alternative?.typeCheck(env)
-        TypedStatement.If(typedCondition, typedConsequent, typedAlternative)
+        TypedExpression.Stmt.If(typedCondition, typedConsequent, typedAlternative)
     }
     is Statement.While -> {
         val typedCondition = condition.typeCheckExpected(Type.Boolean, env)
         val typedBody = body.typeCheck(env)
-        TypedStatement.While(typedCondition, typedBody)
+        TypedExpression.Stmt.While(typedCondition, typedBody)
     }
     is Statement.StatementList -> {
         val childEnv = env.newScope()
-        TypedStatement.StatementList(statements.map { it.typeCheck(childEnv) })
+        TypedExpression.Stmt.ExpressionList(statements.map { it.typeCheck(childEnv) })
     }
 }
 

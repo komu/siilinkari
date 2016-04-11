@@ -3,13 +3,7 @@ package siilinkari.translator
 import siilinkari.ast.RelationalOp
 import siilinkari.env.Binding
 import siilinkari.types.TypedExpression
-import siilinkari.types.TypedStatement
-
-fun TypedStatement.translateToIR(): BasicBlockGraph {
-    val translator = Translator()
-    translator.run { emitCode() }
-    return translator.basicBlocks
-}
+import siilinkari.types.TypedExpression.Stmt
 
 fun TypedExpression.translateToIR(): BasicBlockGraph {
     val translator = Translator()
@@ -22,26 +16,43 @@ class Translator() {
     val basicBlocks = BasicBlockGraph()
     private var currentBlock = basicBlocks.start
 
-    fun TypedStatement.emitCode() {
+    fun TypedExpression.emitCode() {
         when (this) {
-            is TypedStatement.Exp -> {
-                expression.emitCode()
+            is TypedExpression.Ref ->
+                binding.emitLoad()
+            is TypedExpression.Lit ->
+                currentBlock += IR.Push(value)
+            is TypedExpression.Not -> {
+                exp.emitCode()
+                currentBlock += IR.Not
+            }
+            is TypedExpression.Binary ->
+                emitCode()
+            is TypedExpression.Call -> {
+                args.asReversed().forEach { it.emitCode() }
+                func.emitCode()
+                currentBlock += IR.Call
+            }
+            is TypedExpression.Stmt ->
+                emitCode()
+            else ->
+                error("unknown expression: $this")
+        }
+    }
 
-                // If we are evaluating an expression as a statement,
-                // we need to discard the result of the expression.
-                currentBlock += IR.Pop
-            }
-            is TypedStatement.StatementList ->
+    private fun Stmt.emitCode() {
+        when (this) {
+            is Stmt.ExpressionList ->
                 statements.forEach { it.emitCode() }
-            is TypedStatement.Assign -> {
+            is Stmt.Assign -> {
                 expression.emitCode()
                 variable.emitStore()
             }
-            is TypedStatement.Var -> {
+            is Stmt.Var -> {
                 expression.emitCode()
                 variable.emitStore()
             }
-            is TypedStatement.If -> {
+            is Stmt.If -> {
                 condition.emitCode()
 
                 val afterBlock = BasicBlock()
@@ -72,7 +83,7 @@ class Translator() {
 
                 currentBlock = afterBlock
             }
-            is TypedStatement.While -> {
+            is Stmt.While -> {
                 val loopHead = BasicBlock()
                 val loopBody = BasicBlock()
                 val afterLoop = BasicBlock()
@@ -90,28 +101,6 @@ class Translator() {
                 currentBlock = afterLoop
             }
             else -> error("unknown statement: $this")
-        }
-    }
-
-    fun TypedExpression.emitCode() {
-        when (this) {
-            is TypedExpression.Ref ->
-                binding.emitLoad()
-            is TypedExpression.Lit ->
-                currentBlock += IR.Push(value)
-            is TypedExpression.Not -> {
-                exp.emitCode()
-                currentBlock += IR.Not
-            }
-            is TypedExpression.Binary ->
-                emitCode()
-            is TypedExpression.Call -> {
-                args.asReversed().forEach { it.emitCode() }
-                func.emitCode()
-                currentBlock += IR.Call
-            }
-            else ->
-                error("unknown expression: $this")
         }
     }
 
