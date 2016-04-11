@@ -14,6 +14,7 @@ import siilinkari.translator.FunctionTranslator
 import siilinkari.translator.IR
 import siilinkari.translator.translateToCode
 import siilinkari.translator.translateToIR
+import siilinkari.types.Type
 import siilinkari.types.type
 import siilinkari.types.typeCheck
 
@@ -84,13 +85,20 @@ class Evaluator {
         // We have to create the binding into global environment before calling createFunction
         // because the function might want to call itself recursively. But if createFunction fails
         // (most probably to type-checking), we need to unbind the binding.
-        val binding = globalTypeEnvironment.bind(func.name, func.signature, mutable = false)
+        var binding = func.returnType?.let { returnType ->
+            globalTypeEnvironment.bind(func.name, Type.Function(func.args.map { it.second }, returnType), mutable = false)
+        }
         try {
-            val code = functionTranslator.translateFunction(func)
+            val (signature, code) = functionTranslator.translateFunction(func)
             val address = globalCode.addRelocated(code)
-            globalData[binding.index] = Value.Function.Compound(func.name, func.signature, address)
+            if (binding != null)
+                globalTypeEnvironment.unbind(func.name)
+
+            binding = globalTypeEnvironment.bind(func.name, signature, mutable = false)
+            globalData[binding.index] = Value.Function.Compound(func.name, signature, address)
         } catch (e: Exception) {
-            globalTypeEnvironment.unbind(func.name)
+            if (binding != null)
+                globalTypeEnvironment.unbind(func.name)
             throw e
         }
     }

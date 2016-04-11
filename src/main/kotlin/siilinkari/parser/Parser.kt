@@ -60,15 +60,14 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * functionDefinition :== "fun" name "(" args ")" ":" type "=" expression
+     * functionDefinition :== "fun" name "(" args ")" [ ":" type ] "=" expression
      * ```
      */
     fun parseFunctionDefinition(): FunctionDefinition {
         lexer.expect(Keyword.Fun)
         val name = parseName().first
         val args = parseArgumentDefinitionList()
-        lexer.expect(Punctuation.Colon)
-        val returnType = parseType()
+        val returnType = if (lexer.readNextIf(Punctuation.Colon)) parseType() else null
         lexer.expect(Punctuation.Equal)
         val body = parseExpression()
 

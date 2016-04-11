@@ -193,7 +193,7 @@ class EvaluatorTest {
     }
 
     private fun defineSquareFunction() {
-        evaluator.evaluate("fun square(x: Int): Int = x * x")
+        evaluator.evaluate("fun square(x: Int) = x * x")
     }
 
     private fun evaluate(code: String) =

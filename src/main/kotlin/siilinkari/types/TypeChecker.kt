@@ -122,7 +122,7 @@ private fun Expression.Binary.typeCheckMatching(env: StaticEnvironment): Pair<Ty
     return Pair(typedLhs, typedRhs)
 }
 
-private fun TypedExpression.expectAssignableTo(expectedType: Type, location: SourceLocation): TypedExpression =
+fun TypedExpression.expectAssignableTo(expectedType: Type, location: SourceLocation): TypedExpression =
     if (type == expectedType)
         this
     else
