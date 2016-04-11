@@ -1,12 +1,12 @@
 package siilinkari.translator
 
 import org.junit.Test
-import siilinkari.env.GlobalStaticEnvironment
-import siilinkari.parser.parseStatement
-import siilinkari.types.typeCheck
+import siilinkari.vm.Evaluator
 import kotlin.test.assertEquals
 
 class TranslatorTest {
+
+    val evaluator = Evaluator()
 
     @Test
     fun simpleTranslation() {
@@ -19,35 +19,55 @@ class TranslatorTest {
             }
             """,
             """
+            0 Push 5
+            1 StoreLocal 0 ; x
+            2 Jump 3
+            3 LoadLocal 0 ; x
+            4 Push 0
+            5 Equal
+            6 Not
+            7 JumpIfFalse 14
+            8 Jump 9
+            9 LoadLocal 0 ; x
+            10 Push 1
+            11 Subtract
+            12 StoreLocal 0 ; x
+            13 Jump 3
+            14 Quit
+            """)
+    }
+
+    @Test
+    fun readMeExample() {
+        assertTranslation("""
+            {
+                var x = 4;
+                var s = "";
+                if (x == 2 + 2) { var t = "It"; s = t + " worked!"; }
+            }
+            """,
+            """
             0 Push 4
-            1 Push 1
-            2 Add
-            3 StoreLocal 0 ; x
-            4 Jump 5
-            5 LoadLocal 0 ; x
-            6 Push 0
-            7 Equal
-            8 Not
-            9 JumpIfFalse 16
-            10 Jump 11
-            11 LoadLocal 0 ; x
-            12 Push 1
-            13 Subtract
-            14 StoreLocal 0 ; x
-            15 Jump 5
+            1 StoreLocal 0 ; x
+            2 Push ""
+            3 StoreLocal 1 ; s
+            4 LoadLocal 0 ; x
+            5 Push 4
+            6 Equal
+            7 JumpIfFalse 16
+            8 Jump 9
+            9 Push "It"
+            10 Dup
+            11 StoreLocal 2 ; t
+            12 Push " worked!"
+            13 ConcatString
+            14 StoreLocal 1 ; s
+            15 Jump 16
+            16 Quit
             """)
     }
 
     private fun assertTranslation(source: String, translated: String) {
-        assertEquals(translated.trimIndent(), translateStatement(source))
-    }
-
-    private fun translateStatement(source: String): String {
-        val typed = parseStatement(source).typeCheck(GlobalStaticEnvironment())
-
-        val blocks = typed.translateToIR()
-        blocks.optimize()
-
-        return blocks.translateToCode().toString()
+        assertEquals(translated.trimIndent(), evaluator.dump(source))
     }
 }
