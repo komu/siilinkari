@@ -26,7 +26,7 @@ class DataSegment {
      */
     operator fun get(index: Int): Value =
         // We don't need to call ensureCapacity here because we can never read uninitialized values
-        bindings[index]!!
+        bindings[index] ?: error("uninitialized read at $index")
 
     private fun ensureCapacity(capacity: Int) {
         if (capacity > bindings.size) {
