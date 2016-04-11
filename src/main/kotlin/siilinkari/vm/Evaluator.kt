@@ -1,15 +1,15 @@
 package siilinkari.vm
 
+import siilinkari.ast.ExpressionOrStatement
 import siilinkari.ast.FunctionDefinition
+import siilinkari.ast.Statement
 import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.lexer.LookaheadLexer
-import siilinkari.lexer.SyntaxErrorException
 import siilinkari.lexer.Token.Keyword
 import siilinkari.objects.Value
 import siilinkari.optimizer.optimize
-import siilinkari.parser.parseExpression
+import siilinkari.parser.parseExpressionOrStatement
 import siilinkari.parser.parseFunctionDefinition
-import siilinkari.parser.parseStatement
 import siilinkari.translator.FunctionTranslator
 import siilinkari.translator.IR
 import siilinkari.translator.translateToCode
@@ -28,7 +28,7 @@ class Evaluator {
     private val globalTypeEnvironment = GlobalStaticEnvironment()
     private val globalCode = CodeSegment.Builder()
     private val functionTranslator = FunctionTranslator(globalTypeEnvironment)
-    var trace = false;
+    var trace = false
 
     /**
      * Binds a global name to given value.
@@ -39,9 +39,38 @@ class Evaluator {
     }
 
     /**
+     * Evaluates code which can either be a definition, statement or expression.
+     * If the code represented an expression, returns its value. Otherwise [Value.Unit] is returned.
+     */
+    fun evaluate(code: String): Value {
+        if (LookaheadLexer(code).nextTokenIs(Keyword.Fun)) {
+            val definition = parseFunctionDefinition(code)
+            bindFunction(definition)
+            return Value.Unit
+
+        } else {
+            val parsed = parseExpressionOrStatement(code)
+            val segment = translate(parsed)
+            return evaluateSegment(segment)
+        }
+    }
+
+    /**
+     * Returns the names of all global bindings.
+     */
+    fun bindingsNames(): Set<String> =
+        globalTypeEnvironment.bindingNames()
+
+    /**
+     * Translates given code to opcodes and returns string representation of the opcodes.
+     */
+    fun dump(code: String): String =
+        translate(parseExpressionOrStatement(code)).toString()
+
+    /**
      * Compiles and binds a global function.
      */
-    fun bindFunction(func: FunctionDefinition) {
+    private fun bindFunction(func: FunctionDefinition) {
         // We have to create the binding into global environment before calling createFunction
         // because the function might want to call itself recursively. But if createFunction fails
         // (most probably to type-checking), we need to unbind the binding.
@@ -56,66 +85,20 @@ class Evaluator {
         }
     }
 
-    fun evaluateReplLine(code: String): Value {
-        if (LookaheadLexer(code).nextTokenIs(Keyword.Fun)) {
-            val definition = parseFunctionDefinition(code)
-            bindFunction(definition)
-            return Value.Unit
-        }
-
-        try {
-            parseExpression(code)
-            return evaluateExpression(code)
-        } catch (e: SyntaxErrorException) {
-            evaluateStatement(code)
-            return Value.Unit
-        }
-    }
-
-    /**
-     * Evaluates statement of code. If the statement is an expression
-     * statement, returns its value. Otherwise returns [Value.Unit].
-     */
-    fun evaluateStatement(code: String): Value {
-        val translated = translate(code)
-
-        return evaluateSegment(translated)
-    }
-
-    /**
-     * Evaluates an expression and returns its value.
-     */
-    fun evaluateExpression(code: String): Value {
-        val exp = parseExpression(code)
-        val typedExp = exp.typeCheck(globalTypeEnvironment).optimize()
-
-        val basicBlocks = typedExp.translateToIR()
-        basicBlocks.optimize()
-        basicBlocks.end += IR.Quit
-        val translated = basicBlocks.translateToCode()
-
-        return evaluateSegment(translated)
-    }
-
-    fun bindingsNames(): Set<String> =
-        globalTypeEnvironment.bindingNames()
-
-    /**
-     * Translates given code to opcodes and returns string representation of the opcodes.
-     */
-    fun dump(code: String): String =
-        translate(code).toString()
-
     /**
      * Translates code to opcodes.
      */
-    private fun translate(code: String): CodeSegment {
-        val stmt = parseStatement(code)
+    private fun translate(input: ExpressionOrStatement): CodeSegment {
+        val stmt = when (input) {
+            is ExpressionOrStatement.Exp  -> Statement.Exp(input.exp)
+            is ExpressionOrStatement.Stmt -> input.stmt
+        }
+
         val typedStmt = stmt.typeCheck(globalTypeEnvironment).optimize()
 
-        val blocks = if (typedStmt is TypedStatement.Exp)
+        val blocks = if (typedStmt is TypedStatement.Exp && input is ExpressionOrStatement.Exp) {
             typedStmt.expression.translateToIR()
-        else
+        } else
             typedStmt.translateToIR()
 
         blocks.optimize()

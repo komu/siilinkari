@@ -1,10 +1,7 @@
 package siilinkari.parser
 
-import siilinkari.ast.Expression
+import siilinkari.ast.*
 import siilinkari.ast.Expression.Binary
-import siilinkari.ast.FunctionDefinition
-import siilinkari.ast.RelationalOp
-import siilinkari.ast.Statement
 import siilinkari.lexer.*
 import siilinkari.lexer.Token.*
 import siilinkari.lexer.Token.Punctuation.LeftBrace
@@ -32,6 +29,14 @@ fun parseExpression(code: String): Expression =
  */
 fun parseFunctionDefinition(code: String): FunctionDefinition =
     parseComplete(code) { it.parseFunctionDefinition() }
+
+
+fun parseExpressionOrStatement(code: String): ExpressionOrStatement =
+    try {
+        ExpressionOrStatement.Exp(parseExpression(code))
+    } catch (ignored: SyntaxErrorException) {
+        ExpressionOrStatement.Stmt(parseStatement(code))
+    }
 
 /**
  * Executes parser on code and verifies that it consumes all input.

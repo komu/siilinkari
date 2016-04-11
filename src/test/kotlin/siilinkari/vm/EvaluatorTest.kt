@@ -14,8 +14,6 @@ class EvaluatorTest {
 
     val evaluator = Evaluator()
 
-    private val square = FunctionDefinition("square", listOf("x" to Type.Int), Type.Int, parseExpression("x * x"))
-
     @Test
     fun literalEvaluation() {
         assertExpressionEvaluation("42", 42.value)
@@ -32,7 +30,7 @@ class EvaluatorTest {
 
     @Test
     fun varStatements() {
-        evaluateStatement("var x = 42;")
+        evaluate("var x = 42;")
 
         assertExpressionEvaluation("x", 42.value)
     }
@@ -41,7 +39,7 @@ class EvaluatorTest {
     fun assignments() {
         evaluator.bind("x", 42.value)
 
-        evaluateStatement("x = 123;")
+        evaluate("x = 123;")
 
         assertExpressionEvaluation("x", 123.value)
     }
@@ -57,12 +55,12 @@ class EvaluatorTest {
         evaluator.bind("y", 42.value)
         evaluator.bind("r", 0.value)
 
-        evaluateStatement("if (x) r = 123; else r = y;")
+        evaluate("if (x) r = 123; else r = y;")
         assertExpressionEvaluation("r", 123.value)
 
-        evaluateStatement("x = false;")
+        evaluate("x = false;")
 
-        evaluateStatement("if (x) r = 123; else r = y;")
+        evaluate("if (x) r = 123; else r = y;")
         assertExpressionEvaluation("r", 42.value)
     }
 
@@ -80,10 +78,10 @@ class EvaluatorTest {
     fun ifWithoutElse() {
         evaluator.bind("r", 0.value)
 
-        evaluateStatement("if (false) r = 1;")
+        evaluate("if (false) r = 1;")
         assertExpressionEvaluation("r", 0.value)
 
-        evaluateStatement("if (true) r = 2;")
+        evaluate("if (true) r = 2;")
         assertExpressionEvaluation("r", 2.value)
     }
 
@@ -93,7 +91,7 @@ class EvaluatorTest {
         evaluator.bind("a", 0.value)
         evaluator.bind("b", 0.value)
 
-        evaluateStatement("""
+        evaluate("""
             while (x != 0) {
                 x = x - 1;
                 a = a + 1;
@@ -114,22 +112,22 @@ class EvaluatorTest {
 
     @Test
     fun evaluationFailuresForCoercions() {
-        assertExpressionTypeCheckFails("1 + \"foo\"")
-        assertExpressionTypeCheckFails("!1")
+        assertTypeCheckFails("1 + \"foo\"")
+        assertTypeCheckFails("!1")
     }
 
     @Test
     fun directCalls() {
-        evaluator.bindFunction(square)
+        defineSquareFunction()
         assertExpressionEvaluation("square(4)", 16.value)
     }
 
     @Test
     fun functionCallsThroughLocalVariable() {
-        evaluator.bindFunction(square)
+        defineSquareFunction()
         evaluator.bind("result", 0.value)
 
-        evaluateStatement("""
+        evaluate("""
             if (true) {
                 var sq = square;
                 result = sq(5);
@@ -141,26 +139,26 @@ class EvaluatorTest {
 
     @Test
     fun functionCallsThroughExpression() {
-        evaluator.bindFunction(square)
+        defineSquareFunction()
         assertExpressionEvaluation("(square)(6)", 36.value)
     }
 
     @Test
     fun expressionFunctions() {
-        evaluator.bindFunction(FunctionDefinition("sub", listOf("x" to Type.Int, "y" to Type.Int), Type.Int, parseExpression("x - y")))
+        evaluate("fun sub(x: Int, y: Int): Int = x - y")
 
         assertExpressionEvaluation("sub(7, 4)", 3.value)
     }
 
     @Test
     fun evaluationFailsForUnboundVariables() {
-        assertExpressionTypeCheckFails("x")
-        assertStatementTypeCheckFails("x = 4;")
+        assertTypeCheckFails("x")
+        assertTypeCheckFails("x = 4;")
     }
 
     @Test
     fun evaluationFailsForRebindingVariables() {
-        assertStatementTypeCheckFails("{ var x = 4; var x = 4; }")
+        assertTypeCheckFails("{ var x = 4; var x = 4; }")
     }
 
     @Test
@@ -187,26 +185,20 @@ class EvaluatorTest {
         assertExpressionEvaluation("1 >= 2", false.value)
     }
 
-    private fun assertExpressionTypeCheckFails(s: String) {
+    private fun assertTypeCheckFails(s: String) {
         assertFailsWith<TypeCheckException> {
-            evaluateExpression(s)
-        }
-    }
-
-    private fun assertStatementTypeCheckFails(s: String) {
-        assertFailsWith<TypeCheckException> {
-            evaluateStatement(s)
+            evaluate(s)
         }
     }
 
     private fun assertExpressionEvaluation(code: String, expectedValue: Value) {
-        assertEquals(expectedValue, evaluateExpression(code))
+        assertEquals(expectedValue, evaluate(code))
     }
 
-    private fun evaluateExpression(code: String) =
-        evaluator.evaluateExpression(code)
-
-    private fun evaluateStatement(code: String) {
-        evaluator.evaluateStatement(code)
+    private fun defineSquareFunction() {
+        evaluator.evaluate("fun square(x: Int): Int = x * x")
     }
+
+    private fun evaluate(code: String) =
+        evaluator.evaluate(code)
 }

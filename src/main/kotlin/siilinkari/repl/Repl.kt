@@ -48,7 +48,7 @@ fun main(args: Array<String>) {
             } else {
                 while (true) {
                     try {
-                        val result = evaluator.evaluateReplLine(line)
+                        val result = evaluator.evaluate(line)
                         if (result != Value.Unit)
                             println(result.repr())
                         break
