@@ -90,7 +90,7 @@ class Evaluator {
             globalTypeEnvironment.bind(func.name, Type.Function(func.args.map { it.second }, returnType), mutable = false)
         }
         try {
-            val (signature, code) = functionTranslator.translateFunction(func)
+            val (signature, code) = functionTranslator.translateFunction(func, optimize)
             val address = globalCode.addRelocated(code)
             if (binding != null)
                 globalTypeEnvironment.unbind(func.name)

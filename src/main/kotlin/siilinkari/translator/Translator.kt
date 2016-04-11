@@ -30,7 +30,7 @@ class Translator() {
             is TypedExpression.Call -> {
                 args.asReversed().forEach { it.emitCode() }
                 func.emitCode()
-                currentBlock += IR.Call
+                currentBlock += IR.Call(args.size)
             }
             is TypedExpression.ExpressionList -> {
                 currentBlock += IR.PushUnit

@@ -11,24 +11,33 @@ class BasicBlock() {
     var next: BlockEnd = BlockEnd.None
         private set
 
+    val stackDelta: Int
+        get() = opCodes.sumBy { it.stackDelta } + next.stackDelta
+
     sealed class BlockEnd {
         abstract val blocks: List<BasicBlock>
+        abstract val stackDelta: Int
 
         object None : BlockEnd() {
             override val blocks: List<BasicBlock>
                 get() = emptyList()
+            override val stackDelta = 0
         }
 
         class Jump(val basicBlock: BasicBlock) : BlockEnd() {
             override val blocks: List<BasicBlock>
                 get() = listOf(basicBlock)
+            override val stackDelta = 0
         }
 
         class Branch(val trueBlock: BasicBlock, val falseBlock: BasicBlock) : BlockEnd() {
             override val blocks: List<BasicBlock>
                 get() = listOf(trueBlock, falseBlock)
+            override val stackDelta = -1
         }
     }
+
+    override fun toString() = opCodes.toString()
 
     /**
      * Adds a new opcode.

@@ -25,9 +25,9 @@ class FunctionTranslator(val env: GlobalStaticEnvironment) {
         if (optimize)
             basicBlocks.optimize()
 
-        basicBlocks.start.prepend(IR.Enter(basicBlocks.frameSize))
         basicBlocks.end += IR.Leave(func.args.size)
         basicBlocks.end += IR.Ret
+        basicBlocks.start.prepend(IR.Enter(basicBlocks.frameSize))
 
         return Pair(Type.Function(func.args.map { it.second }, typedExp.type), basicBlocks.translateToCode())
     }

@@ -12,6 +12,8 @@ fun BasicBlockGraph.translateToCode(): CodeSegment {
 }
 
 fun BasicBlockGraph.translateTo(ops: CodeSegment.Builder) {
+    buildStackDepthMap()
+
     val blocks = allBlocks()
 
     val blockAddresses = HashMap<BasicBlock, Int>(blocks.size)
@@ -59,7 +61,7 @@ private fun IR.translate(): OpCode = when (this) {
     IR.ConcatString     -> OpCode.ConcatString
     IR.Pop              -> OpCode.Pop
     IR.Dup              -> OpCode.Dup
-    IR.Call             -> OpCode.Call
+    is IR.Call          -> OpCode.Call
     IR.Ret              -> OpCode.Ret
     IR.Quit             -> OpCode.Quit
     IR.PushUnit         -> OpCode.PushUnit

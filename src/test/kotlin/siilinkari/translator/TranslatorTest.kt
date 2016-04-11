@@ -54,7 +54,7 @@ class TranslatorTest {
             4 LoadLocal 0 ; x
             5 Push 4
             6 Equal
-            7 JumpIfFalse 17
+            7 JumpIfFalse 16
             8 Jump 9
             9 Push "It"
             10 Dup
@@ -62,10 +62,9 @@ class TranslatorTest {
             12 Push " worked!"
             13 ConcatString
             14 StoreLocal 1 ; s
-            15 PushUnit
-            16 Jump 17
-            17 PushUnit
-            18 Quit
+            15 Jump 16
+            16 PushUnit
+            17 Quit
             """)
     }
 
