@@ -78,8 +78,6 @@ class ThreadState {
         stack[sp++] = value
     }
 
-    fun topOrNull(): Value? = if (sp != 0) stack[sp - 1] else null
-
     fun popValues(count: Int): List<Value> {
         val values = ArrayList<Value>(count)
         repeat (count) {
