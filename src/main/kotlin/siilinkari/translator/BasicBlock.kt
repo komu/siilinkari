@@ -14,6 +14,9 @@ class BasicBlock() {
     val stackDelta: Int
         get() = opCodes.sumBy { it.stackDelta } + next.stackDelta
 
+    val frameSize: Int =
+        opCodes.filterIsInstance<IR.LocalFrameIR>().map { it.localFrameOffset + 1 }.max() ?: 0
+
     sealed class BlockEnd {
         abstract val blocks: List<BasicBlock>
         abstract val stackDelta: Int

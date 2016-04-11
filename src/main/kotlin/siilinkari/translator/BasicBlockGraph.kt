@@ -1,7 +1,6 @@
 package siilinkari.translator
 
 import siilinkari.optimizer.peepholeOptimize
-import siilinkari.vm.CodeSegment
 import java.util.*
 
 /**
@@ -51,12 +50,7 @@ class BasicBlockGraph {
     }
 
     val frameSize: Int
-        get() {
-            // TODO: avoid building segment just to get frame-size
-            val sb = CodeSegment.Builder()
-            translateTo(sb)
-            return sb.frameSize
-        }
+        get() = allBlocksInArbitraryOrder().map { it.frameSize }.max() ?: 0
 
     fun BasicBlockGraph.allBlocks(): Collection<BasicBlock> {
         val blocks = allBlocksInArbitraryOrder()

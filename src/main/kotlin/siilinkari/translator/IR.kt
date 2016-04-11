@@ -35,10 +35,15 @@ sealed class IR(val stackDelta: Int) {
         override fun hashCode() = value.hashCode()
     }
 
-    class LoadLocal(val index: Int, val name: String) : IR(1) {
+    interface LocalFrameIR {
+        val localFrameOffset: Int
+    }
+
+    class LoadLocal(val index: Int, val name: String) : IR(1), LocalFrameIR {
         override fun toString() = "LoadLocal $index ; $name"
         override fun equals(other: Any?) = other is LoadLocal && index == other.index && name == other.name
         override fun hashCode() = hash(index, name)
+        override val localFrameOffset: Int = index
     }
 
     class LoadGlobal(val index: Int, val name: String) : IR(1) {
@@ -53,10 +58,11 @@ sealed class IR(val stackDelta: Int) {
         override fun hashCode() = hash(index, name)
     }
 
-    class StoreLocal(val index: Int, val name: String) : IR(-1) {
+    class StoreLocal(val index: Int, val name: String) : IR(-1), LocalFrameIR {
         override fun toString() = "StoreLocal $index ; $name"
         override fun equals(other: Any?) = other is StoreLocal && index == other.index && name == other.name
         override fun hashCode() = hash(index, name)
+        override val localFrameOffset: Int = index
     }
 
     class StoreGlobal(val index: Int, val name: String) : IR(-1) {
