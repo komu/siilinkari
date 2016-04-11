@@ -12,15 +12,18 @@ import siilinkari.vm.CodeSegment
  * Creates a callable function from given expression.
  */
 class FunctionTranslator(val env: GlobalStaticEnvironment) {
-    fun translateFunction(func: FunctionDefinition): Pair<Type.Function, CodeSegment> {
-        val typedExp = func.body.typeCheck(env.newScope(func.args)).optimize()
+    fun translateFunction(func: FunctionDefinition, optimize: Boolean): Pair<Type.Function, CodeSegment> {
+        var typedExp = func.body.typeCheck(env.newScope(func.args))
+        if (optimize)
+            typedExp = typedExp.optimize()
 
         if (func.returnType != null)
             typedExp.expectAssignableTo(func.returnType, func.body.location)
 
         val basicBlocks = typedExp.translateToIR()
 
-        basicBlocks.optimize()
+        if (optimize)
+            basicBlocks.optimize()
 
         basicBlocks.start.prepend(IR.Enter(basicBlocks.frameSize))
         basicBlocks.end += IR.Leave(func.args.size)
