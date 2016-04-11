@@ -29,6 +29,7 @@ class Evaluator {
     private val globalCode = CodeSegment.Builder()
     private val functionTranslator = FunctionTranslator(globalTypeEnvironment)
     var trace = false
+    var optimize = true
 
     /**
      * Binds a global name to given value.
@@ -107,9 +108,12 @@ class Evaluator {
      * Translates code to opcodes.
      */
     private fun translate(exp: TypedExpression): CodeSegment {
-        val blocks = exp.optimize().translateToIR()
+        val optExp = if (optimize) exp.optimize() else exp
+        val blocks = optExp.translateToIR()
 
-        blocks.optimize()
+        if (optimize)
+            blocks.optimize()
+
         blocks.end += IR.Quit
 
         return blocks.translateToCode()
