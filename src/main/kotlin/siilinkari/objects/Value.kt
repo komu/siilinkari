@@ -76,23 +76,22 @@ sealed class Value {
         operator fun div(other: Integer) = Integer(value / other.value)
     }
 
-    sealed class Function(val signature: Type.Function) : Value() {
+    sealed class Function(val name: kotlin.String, val signature: Type.Function) : Value() {
+
+        override fun toString() = "fun $name(${signature.argumentTypes.joinToString(", ")}): ${signature.returnType}"
 
         /**
          * Function whose implementation is byte-code.
          */
-        class Compound(val name: kotlin.String, signature: Type.Function, val address: Int) : Function(signature) {
-            override fun toString() = "Function(name=$name, address=$address)"
-        }
+        class Compound(name: kotlin.String, signature: Type.Function, val address: Int) : Function(name, signature)
 
         /**
          * Function implemented as native function.
          */
-        class Native(signature: Type.Function, private val func: (List<Value>) -> Value) : Value.Function(signature) {
+        class Native(name: kotlin.String, signature: Type.Function, private val func: (List<Value>) -> Value) : Value.Function(name, signature) {
             operator fun invoke(args: List<Value>): Value = func(args)
             val argumentCount: Int
                 get() = signature.argumentTypes.size
-            override fun toString() = "Function.Native"
         }
     }
 
