@@ -22,34 +22,41 @@ class ParserTest {
 
     @Test
     fun ifStatements() {
-        assertParseStatement("if (x) y; else z;", "[If [Ref x] [Ref y] [Ref z]]")
-        assertParseStatement("if (x) y;", "[If [Ref x] [Ref y] []]")
+        assertParseExpression("if (x) y else z", "[If [Ref x] [Ref y] [Ref z]]")
+        assertParseExpression("if (x) y", "[If [Ref x] [Ref y] []]")
     }
 
     @Test
     fun whileStatements() {
-        assertParseStatement("while (x) y;", "[While [Ref x] [Ref y]]")
+        assertParseExpression("while (x) y", "[While [Ref x] [Ref y]]")
     }
 
     @Test
     fun assignment() {
-        assertParseStatement("foo = bar;", "[Assign foo [Ref bar]]")
+        assertParseExpression("foo = bar", "[Assign foo [Ref bar]]")
     }
 
     @Test
     fun vars() {
-        assertParseStatement("var foo = bar;", "[Var foo [Ref bar]]")
+        assertParseExpression("var foo = bar", "[Var foo [Ref bar]]")
     }
 
     @Test
     fun vals() {
-        assertParseStatement("val foo = bar;", "[Val foo [Ref bar]]")
+        assertParseExpression("val foo = bar", "[Val foo [Ref bar]]")
     }
 
     @Test
-    fun statementList() {
-        assertParseStatement("{}", "[StatementList []]")
-        assertParseStatement("{ x; y; z; }", "[StatementList [[Ref x], [Ref y], [Ref z]]]")
+    fun ifAsAnExpression() {
+        assertParseExpression("1 + if (true) 2 else 3", "[Plus [Lit 1] [If [Lit true] [Lit 2] [Lit 3]]]")
+        assertParseExpression("if (true) 2 else 3 + 4", "[If [Lit true] [Lit 2] [Plus [Lit 3] [Lit 4]]]")
+        assertParseExpression("(if (true) 2 else 3) + 4", "[Plus [If [Lit true] [Lit 2] [Lit 3]] [Lit 4]]")
+    }
+
+    @Test
+    fun expressionList() {
+        assertParseExpression("{}", "[ExpressionList []]")
+        assertParseExpression("{ x; y; z }", "[ExpressionList [[Ref x], [Ref y], [Ref z]]]")
     }
 
     @Test
@@ -100,15 +107,9 @@ class ParserTest {
 
     private fun assertSyntaxError(code: String) {
         assertFailsWith<SyntaxErrorException> {
-            val stmt = parseStatement(code)
+            val stmt = parseExpression(code)
             fail("expected syntax error, but got $stmt")
         }
-    }
-
-    private fun assertParseStatement(source: String, expected: String) {
-        val statement = parseStatement(source)
-
-        assertEquals(expected, statement.toString(), source)
     }
 
     private fun assertParseExpression(source: String, expected: String) {

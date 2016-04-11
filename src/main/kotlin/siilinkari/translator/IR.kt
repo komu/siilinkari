@@ -24,6 +24,7 @@ sealed class IR {
     object Call : IR()
     object Ret : IR()
     object Quit : IR()
+    object PushUnit : IR()
 
     class Enter(val frameSize: Int) : IR()
     class Leave(val paramCount: Int) : IR()

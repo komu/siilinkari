@@ -21,6 +21,7 @@ sealed class OpCode {
     object Call : OpCode()
     object Ret : OpCode()
     object Quit : OpCode()
+    object PushUnit : OpCode()
 
     class Push(val value: Value) : OpCode() {
         override fun toString() = "Push ${value.repr()}"

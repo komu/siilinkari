@@ -14,8 +14,6 @@ import siilinkari.objects.Value
  * source code, but rather provides a simple, compact and unambiguous syntax for
  * trees. Apart from debugging, its used in tests to verify the expected structure
  * of the parse tree.
- *
- * @see Statement
  */
 sealed class Expression(val location: SourceLocation) {
 
@@ -59,5 +57,30 @@ sealed class Expression(val location: SourceLocation) {
         class Relational(val op: RelationalOp, lhs: Expression, rhs: Expression, location: SourceLocation) : Binary(lhs, rhs, location) {
             override fun toString() = "[$op $lhs $rhs]"
         }
+    }
+
+    /** Assignment to a variable. */
+    class Assign(val variable: String, val expression: Expression, location: SourceLocation) : Expression(location) {
+        override fun toString() = "[Assign $variable $expression]"
+    }
+
+    /** Definition of a variable. */
+    class Var(val variable: String, val expression: Expression, val mutable: Boolean, location: SourceLocation) : Expression(location) {
+        override fun toString() = "[${if (mutable) "Var" else "Val"} $variable $expression]"
+    }
+
+    /** If-statement with optional else clause. */
+    class If(val condition: Expression, val consequent: Expression, val alternative: Expression?, location: SourceLocation) : Expression(location) {
+        override fun toString() = "[If $condition $consequent ${alternative ?: "[]"}]"
+    }
+
+    /** While-statement. */
+    class While(val condition: Expression, val body: Expression, location: SourceLocation) : Expression(location) {
+        override fun toString() = "[While $condition $body]"
+    }
+
+    /** List of statements */
+    class ExpressionList(val expressions: List<Expression>, location: SourceLocation) : Expression(location) {
+        override fun toString() = "[ExpressionList $expressions]"
     }
 }

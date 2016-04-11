@@ -1,7 +1,6 @@
 package siilinkari.types
 
 import siilinkari.ast.Expression
-import siilinkari.ast.Statement
 import siilinkari.env.Binding
 import siilinkari.env.StaticEnvironment
 import siilinkari.env.VariableAlreadyBoundException
@@ -23,6 +22,39 @@ fun Expression.typeCheck(env: StaticEnvironment): TypedExpression = when (this) 
     is Expression.Not    -> TypedExpression.Not(exp.typeCheckExpected(Type.Boolean, env))
     is Expression.Binary -> typeCheck(env)
     is Expression.Call   -> typeCheck(env)
+    is Expression.Assign -> {
+        val binding = env.lookupBinding(variable, location)
+        if (!binding.mutable)
+            throw TypeCheckException("can't assign to immutable variable ${binding.name}", location)
+        val typedLhs = expression.typeCheckExpected(binding.type, env)
+        TypedExpression.Assign(binding, typedLhs)
+    }
+    is Expression.Var -> {
+        val typed = expression.typeCheck(env)
+        val binding = env.bindType(variable, typed.type, location, mutable)
+        TypedExpression.Var(binding, typed)
+    }
+    is Expression.If -> {
+        val typedCondition = condition.typeCheckExpected(Type.Boolean, env)
+        val typedConsequent = consequent.typeCheck(env)
+        val typedAlternative = alternative?.typeCheck(env)
+
+        val type = if (typedAlternative != null && typedConsequent.type == typedAlternative.type)
+            typedConsequent.type
+        else
+            Type.Unit
+
+        TypedExpression.If(typedCondition, typedConsequent, typedAlternative, type)
+    }
+    is Expression.While -> {
+        val typedCondition = condition.typeCheckExpected(Type.Boolean, env)
+        val typedBody = body.typeCheck(env)
+        TypedExpression.While(typedCondition, typedBody)
+    }
+    is Expression.ExpressionList -> {
+        val childEnv = env.newScope()
+        TypedExpression.ExpressionList(expressions.map { it.typeCheck(childEnv) })
+    }
 }
 
 private fun Expression.Call.typeCheck(env: StaticEnvironment): TypedExpression {
@@ -98,38 +130,6 @@ private fun TypedExpression.expectAssignableTo(expectedType: Type, location: Sou
 
 fun Expression.typeCheckExpected(expectedType: Type, env: StaticEnvironment): TypedExpression =
     typeCheck(env).expectAssignableTo(expectedType, location)
-
-fun Statement.typeCheck(env: StaticEnvironment): TypedExpression = when (this) {
-    is Statement.Exp ->
-        expression.typeCheck(env)
-    is Statement.Assign -> {
-        val binding = env.lookupBinding(variable, location)
-        if (!binding.mutable)
-            throw TypeCheckException("can't assign to immutable variable ${binding.name}", location)
-        val typedLhs = expression.typeCheckExpected(binding.type, env)
-        TypedExpression.Stmt.Assign(binding, typedLhs)
-    }
-    is Statement.Var -> {
-        val typed = expression.typeCheck(env)
-        val binding = env.bindType(variable, typed.type, location, mutable)
-        TypedExpression.Stmt.Var(binding, typed)
-    }
-    is Statement.If -> {
-        val typedCondition = condition.typeCheckExpected(Type.Boolean, env)
-        val typedConsequent = consequent.typeCheck(env)
-        val typedAlternative = alternative?.typeCheck(env)
-        TypedExpression.Stmt.If(typedCondition, typedConsequent, typedAlternative)
-    }
-    is Statement.While -> {
-        val typedCondition = condition.typeCheckExpected(Type.Boolean, env)
-        val typedBody = body.typeCheck(env)
-        TypedExpression.Stmt.While(typedCondition, typedBody)
-    }
-    is Statement.StatementList -> {
-        val childEnv = env.newScope()
-        TypedExpression.Stmt.ExpressionList(statements.map { it.typeCheck(childEnv) })
-    }
-}
 
 private fun StaticEnvironment.lookupBinding(name: String, location: SourceLocation): Binding =
     this[name] ?: throw TypeCheckException("unbound variable '$name'", location)

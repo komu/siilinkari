@@ -62,6 +62,7 @@ private fun IR.translate(): OpCode = when (this) {
     IR.Call             -> OpCode.Call
     IR.Ret              -> OpCode.Ret
     IR.Quit             -> OpCode.Quit
+    IR.PushUnit         -> OpCode.PushUnit
     is IR.Push          -> OpCode.Push(value)
     is IR.LoadLocal     -> OpCode.LoadLocal(index, name)
     is IR.LoadGlobal    -> OpCode.LoadGlobal(index, name)

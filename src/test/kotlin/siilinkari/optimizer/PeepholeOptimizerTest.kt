@@ -32,4 +32,17 @@ class PeepholeOptimizerTest {
 
         assertEquals(listOf(IR.Add, IR.Multiply), block.opCodes)
     }
+
+    @Test
+    fun removeRedundantPushUnits() {
+        val block = BasicBlock()
+        block += IR.Add
+        block += IR.PushUnit
+        block += IR.Pop
+        block += IR.Multiply
+
+        block.peepholeOptimize()
+
+        assertEquals(listOf(IR.Add, IR.Multiply), block.opCodes)
+    }
 }

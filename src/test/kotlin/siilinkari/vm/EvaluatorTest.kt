@@ -1,11 +1,8 @@
 package siilinkari.vm
 
 import org.junit.Test
-import siilinkari.ast.FunctionDefinition
 import siilinkari.objects.Value
 import siilinkari.objects.value
-import siilinkari.parser.parseExpression
-import siilinkari.types.Type
 import siilinkari.types.TypeCheckException
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -16,37 +13,37 @@ class EvaluatorTest {
 
     @Test
     fun literalEvaluation() {
-        assertExpressionEvaluation("42", 42.value)
-        assertExpressionEvaluation("true", true.value)
-        assertExpressionEvaluation("\"foo\"", "foo".value)
+        assertEvaluation("42", 42.value)
+        assertEvaluation("true", true.value)
+        assertEvaluation("\"foo\"", "foo".value)
     }
 
     @Test
     fun variableEvaluation() {
         evaluator.bind("x", 123.value)
 
-        assertExpressionEvaluation("x", 123.value)
+        assertEvaluation("x", 123.value)
     }
 
     @Test
     fun varStatements() {
-        evaluate("var x = 42;")
+        evaluate("var x = 42")
 
-        assertExpressionEvaluation("x", 42.value)
+        assertEvaluation("x", 42.value)
     }
 
     @Test
     fun assignments() {
         evaluator.bind("x", 42.value)
 
-        evaluate("x = 123;")
+        evaluate("x = 123")
 
-        assertExpressionEvaluation("x", 123.value)
+        assertEvaluation("x", 123.value)
     }
 
     @Test
     fun arithmetic() {
-        assertExpressionEvaluation("1 + 2 * 3 + 4 / 2", 9.value)
+        assertEvaluation("1 + 2 * 3 + 4 / 2", 9.value)
     }
 
     @Test
@@ -55,34 +52,34 @@ class EvaluatorTest {
         evaluator.bind("y", 42.value)
         evaluator.bind("r", 0.value)
 
-        evaluate("if (x) r = 123; else r = y;")
-        assertExpressionEvaluation("r", 123.value)
+        evaluate("if (x) r = 123 else r = y")
+        assertEvaluation("r", 123.value)
 
-        evaluate("x = false;")
+        evaluate("x = false")
 
-        evaluate("if (x) r = 123; else r = y;")
-        assertExpressionEvaluation("r", 42.value)
+        evaluate("if (x) r = 123 else r = y")
+        assertEvaluation("r", 42.value)
     }
 
     @Test
     fun binaryExpressions() {
-        assertExpressionEvaluation("1 + 2", 3.value)
-        assertExpressionEvaluation("1 - 2", (-1).value)
-        assertExpressionEvaluation("1 == 2", false.value)
-        assertExpressionEvaluation("1 == 1", true.value)
-        assertExpressionEvaluation("1 != 2", true.value)
-        assertExpressionEvaluation("1 != 1", false.value)
+        assertEvaluation("1 + 2", 3.value)
+        assertEvaluation("1 - 2", (-1).value)
+        assertEvaluation("1 == 2", false.value)
+        assertEvaluation("1 == 1", true.value)
+        assertEvaluation("1 != 2", true.value)
+        assertEvaluation("1 != 1", false.value)
     }
 
     @Test
     fun ifWithoutElse() {
         evaluator.bind("r", 0.value)
 
-        evaluate("if (false) r = 1;")
-        assertExpressionEvaluation("r", 0.value)
+        evaluate("if (false) r = 1")
+        assertEvaluation("r", 0.value)
 
-        evaluate("if (true) r = 2;")
-        assertExpressionEvaluation("r", 2.value)
+        evaluate("if (true) r = 2")
+        assertEvaluation("r", 2.value)
     }
 
     @Test
@@ -95,19 +92,19 @@ class EvaluatorTest {
             while (x != 0) {
                 x = x - 1;
                 a = a + 1;
-                b = a + b;
+                b = a + b
             }
         """)
 
-        assertExpressionEvaluation("x", 0.value)
-        assertExpressionEvaluation("a", 5.value)
-        assertExpressionEvaluation("b", 15.value)
+        assertEvaluation("x", 0.value)
+        assertEvaluation("a", 5.value)
+        assertEvaluation("b", 15.value)
     }
 
     @Test
     fun not() {
-        assertExpressionEvaluation("!true", false.value)
-        assertExpressionEvaluation("!false", true.value)
+        assertEvaluation("!true", false.value)
+        assertEvaluation("!false", true.value)
     }
 
     @Test
@@ -119,7 +116,7 @@ class EvaluatorTest {
     @Test
     fun directCalls() {
         defineSquareFunction()
-        assertExpressionEvaluation("square(4)", 16.value)
+        assertEvaluation("square(4)", 16.value)
     }
 
     @Test
@@ -130,59 +127,59 @@ class EvaluatorTest {
         evaluate("""
             if (true) {
                 var sq = square;
-                result = sq(5);
+                result = sq(5)
             }
         """)
 
-        assertExpressionEvaluation("result", 25.value)
+        assertEvaluation("result", 25.value)
     }
 
     @Test
     fun functionCallsThroughExpression() {
         defineSquareFunction()
-        assertExpressionEvaluation("(square)(6)", 36.value)
+        assertEvaluation("(square)(6)", 36.value)
     }
 
     @Test
     fun expressionFunctions() {
         evaluate("fun sub(x: Int, y: Int): Int = x - y")
 
-        assertExpressionEvaluation("sub(7, 4)", 3.value)
+        assertEvaluation("sub(7, 4)", 3.value)
     }
 
     @Test
     fun evaluationFailsForUnboundVariables() {
         assertTypeCheckFails("x")
-        assertTypeCheckFails("x = 4;")
+        assertTypeCheckFails("x = 4")
     }
 
     @Test
     fun evaluationFailsForRebindingVariables() {
-        assertTypeCheckFails("{ var x = 4; var x = 4; }")
+        assertTypeCheckFails("{ var x = 4; var x = 4 }")
     }
 
     @Test
     fun plusWithStringLiteralOnLeftSideIsStringConcatenation() {
-        assertExpressionEvaluation("\"foo \" + \"bar\"", "foo bar".value)
-        assertExpressionEvaluation("\"foo \" + 42", "foo 42".value)
-        assertExpressionEvaluation("\"foo \" + true", "foo true".value)
+        assertEvaluation("\"foo \" + \"bar\"", "foo bar".value)
+        assertEvaluation("\"foo \" + 42", "foo 42".value)
+        assertEvaluation("\"foo \" + true", "foo true".value)
     }
 
     @Test
     fun relationalOperators() {
-        assertExpressionEvaluation("1 == 1", true.value)
-        assertExpressionEvaluation("1 != 1", false.value)
-        assertExpressionEvaluation("1 < 1", false.value)
-        assertExpressionEvaluation("1 <= 1", true.value)
-        assertExpressionEvaluation("1 > 1", false.value)
-        assertExpressionEvaluation("1 >= 1", true.value)
+        assertEvaluation("1 == 1", true.value)
+        assertEvaluation("1 != 1", false.value)
+        assertEvaluation("1 < 1", false.value)
+        assertEvaluation("1 <= 1", true.value)
+        assertEvaluation("1 > 1", false.value)
+        assertEvaluation("1 >= 1", true.value)
 
-        assertExpressionEvaluation("1 == 2", false.value)
-        assertExpressionEvaluation("1 != 2", true.value)
-        assertExpressionEvaluation("1 < 2", true.value)
-        assertExpressionEvaluation("1 <= 2", true.value)
-        assertExpressionEvaluation("1 > 2", false.value)
-        assertExpressionEvaluation("1 >= 2", false.value)
+        assertEvaluation("1 == 2", false.value)
+        assertEvaluation("1 != 2", true.value)
+        assertEvaluation("1 < 2", true.value)
+        assertEvaluation("1 <= 2", true.value)
+        assertEvaluation("1 > 2", false.value)
+        assertEvaluation("1 >= 2", false.value)
     }
 
     private fun assertTypeCheckFails(s: String) {
@@ -191,7 +188,7 @@ class EvaluatorTest {
         }
     }
 
-    private fun assertExpressionEvaluation(code: String, expectedValue: Value) {
+    private fun assertEvaluation(code: String, expectedValue: Value) {
         assertEquals(expectedValue, evaluate(code))
     }
 

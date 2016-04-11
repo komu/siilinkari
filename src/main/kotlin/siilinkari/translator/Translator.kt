@@ -3,7 +3,6 @@ package siilinkari.translator
 import siilinkari.ast.RelationalOp
 import siilinkari.env.Binding
 import siilinkari.types.TypedExpression
-import siilinkari.types.TypedExpression.Stmt
 
 fun TypedExpression.translateToIR(): BasicBlockGraph {
     val translator = Translator()
@@ -33,26 +32,24 @@ class Translator() {
                 func.emitCode()
                 currentBlock += IR.Call
             }
-            is TypedExpression.Stmt ->
-                emitCode()
-            else ->
-                error("unknown expression: $this")
-        }
-    }
-
-    private fun Stmt.emitCode() {
-        when (this) {
-            is Stmt.ExpressionList ->
-                statements.forEach { it.emitCode() }
-            is Stmt.Assign -> {
+            is TypedExpression.ExpressionList -> {
+                currentBlock += IR.PushUnit
+                expressions.forEach { expression ->
+                    currentBlock += IR.Pop
+                    expression.emitCode()
+                }
+            }
+            is TypedExpression.Assign -> {
                 expression.emitCode()
                 variable.emitStore()
+                currentBlock += IR.PushUnit
             }
-            is Stmt.Var -> {
+            is TypedExpression.Var -> {
                 expression.emitCode()
                 variable.emitStore()
+                currentBlock += IR.PushUnit
             }
-            is Stmt.If -> {
+            is TypedExpression.If -> {
                 condition.emitCode()
 
                 val afterBlock = BasicBlock()
@@ -78,12 +75,15 @@ class Translator() {
 
                     currentBlock = trueBlock
                     consequent.emitCode()
+                    currentBlock += IR.Pop
                     trueBlock.endWithJumpTo(afterBlock)
+
+                    afterBlock += IR.PushUnit
                 }
 
                 currentBlock = afterBlock
             }
-            is Stmt.While -> {
+            is TypedExpression.While -> {
                 val loopHead = BasicBlock()
                 val loopBody = BasicBlock()
                 val afterLoop = BasicBlock()
@@ -96,11 +96,13 @@ class Translator() {
 
                 currentBlock = loopBody
                 body.emitCode()
+                currentBlock += IR.Pop
                 loopBody.endWithJumpTo(loopHead)
 
                 currentBlock = afterLoop
+                currentBlock += IR.PushUnit
             }
-            else -> error("unknown statement: $this")
+            else -> error("unknown expression: $this")
         }
     }
 

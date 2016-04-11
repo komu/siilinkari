@@ -20,6 +20,7 @@ fun BasicBlock.peepholeOptimize() {
 
 /** List of optimizers to run. */
 private val optimizers = listOf(
+        RedundantPushUnitPopOptimizer,
         RedundantLoadOptimizer,
         RedundantLoadStoreOptimizer)
 
@@ -91,6 +92,20 @@ private object RedundantLoadOptimizer : PeepholeOptimizer(2) {
 
         return if (first is IR.StoreLocal && second is IR.LoadLocal && first.index == second.index)
             listOf(IR.Dup, first)
+        else
+            null
+    }
+}
+
+/**
+ * Removes PushUnit + Pop -combinations
+ */
+private object RedundantPushUnitPopOptimizer : PeepholeOptimizer(2) {
+    override fun optimizeWindow(window: List<IR>): List<IR>? {
+        val (first, second) = window
+
+        return if (first == IR.PushUnit && second == IR.Pop)
+            listOf()
         else
             null
     }

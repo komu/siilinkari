@@ -1,14 +1,13 @@
 package siilinkari.vm
 
-import siilinkari.ast.ExpressionOrStatement
+import siilinkari.ast.Expression
 import siilinkari.ast.FunctionDefinition
-import siilinkari.ast.Statement
 import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.lexer.LookaheadLexer
 import siilinkari.lexer.Token.Keyword
 import siilinkari.objects.Value
 import siilinkari.optimizer.optimize
-import siilinkari.parser.parseExpressionOrStatement
+import siilinkari.parser.parseExpression
 import siilinkari.parser.parseFunctionDefinition
 import siilinkari.translator.FunctionTranslator
 import siilinkari.translator.IR
@@ -48,7 +47,7 @@ class Evaluator {
             return Value.Unit
 
         } else {
-            val parsed = parseExpressionOrStatement(code)
+            val parsed = parseExpression(code)
             val segment = translate(parsed)
             return evaluateSegment(segment)
         }
@@ -64,7 +63,7 @@ class Evaluator {
      * Translates given code to opcodes and returns string representation of the opcodes.
      */
     fun dump(code: String): String =
-        translate(parseExpressionOrStatement(code)).toString()
+        translate(parseExpression(code)).toString()
 
     /**
      * Compiles and binds a global function.
@@ -87,13 +86,8 @@ class Evaluator {
     /**
      * Translates code to opcodes.
      */
-    private fun translate(input: ExpressionOrStatement): CodeSegment {
-        val stmt = when (input) {
-            is ExpressionOrStatement.Exp  -> Statement.Exp(input.exp)
-            is ExpressionOrStatement.Stmt -> input.stmt
-        }
-
-        val blocks = stmt.typeCheck(globalTypeEnvironment).optimize().translateToIR()
+    private fun translate(exp: Expression): CodeSegment {
+        val blocks = exp.typeCheck(globalTypeEnvironment).optimize().translateToIR()
 
         blocks.optimize()
         blocks.end += IR.Quit
@@ -132,6 +126,7 @@ class Evaluator {
                 OpCode.LessThan         -> state.evalBinary<Value, Value> { l, r -> Value.Bool(l.lessThan(r)) }
                 OpCode.LessThanOrEqual  -> state.evalBinary<Value, Value> { l, r -> Value.Bool(l == r || l.lessThan(r)) }
                 OpCode.ConcatString     -> state.evalBinary<Value.String, Value> { l, r -> l + r }
+                OpCode.PushUnit         -> state.push(Value.Unit)
                 is OpCode.Push          -> state.push(op.value)
                 is OpCode.Jump          -> state.pc = op.address
                 is OpCode.JumpIfFalse   -> if (!state.pop<Value.Bool>().value) state.pc = op.address

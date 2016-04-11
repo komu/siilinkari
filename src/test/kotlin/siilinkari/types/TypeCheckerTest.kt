@@ -4,7 +4,6 @@ import org.junit.Test
 import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.env.StaticEnvironment
 import siilinkari.parser.parseExpression
-import siilinkari.parser.parseStatement
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -14,9 +13,9 @@ class TypeCheckerTest {
 
     @Test
     fun literalTypes() {
-        assertExpressionType(Type.String, "\"foo\"")
-        assertExpressionType(Type.Int, "123")
-        assertExpressionType(Type.Boolean, "true")
+        assertType(Type.String, "\"foo\"")
+        assertType(Type.Int, "123")
+        assertType(Type.Boolean, "true")
     }
 
     @Test
@@ -24,69 +23,85 @@ class TypeCheckerTest {
         env.bind("s", Type.String)
         env.bind("b", Type.Boolean)
 
-        assertExpressionType(Type.String, "s")
-        assertExpressionType(Type.Boolean, "b")
+        assertType(Type.String, "s")
+        assertType(Type.Boolean, "b")
     }
 
     @Test
     fun not() {
-        assertExpressionType(Type.Boolean, "!true")
-        assertExpressionTypeCheckFails("!1")
+        assertType(Type.Boolean, "!true")
+        assertTypeCheckFails("!1")
     }
 
     @Test
     fun equalityComparison() {
-        assertExpressionType(Type.Boolean, "true == false")
-        assertExpressionType(Type.Boolean, "1 == 1")
-        assertExpressionType(Type.Boolean, "\"foo\" == \"bar\"")
+        assertType(Type.Boolean, "true == false")
+        assertType(Type.Boolean, "1 == 1")
+        assertType(Type.Boolean, "\"foo\" == \"bar\"")
 
-        assertExpressionType(Type.Boolean, "true != false")
-        assertExpressionType(Type.Boolean, "1 != 1")
-        assertExpressionType(Type.Boolean, "\"foo\" != \"bar\"")
+        assertType(Type.Boolean, "true != false")
+        assertType(Type.Boolean, "1 != 1")
+        assertType(Type.Boolean, "\"foo\" != \"bar\"")
 
-        assertExpressionTypeCheckFails("true == 1")
-        assertExpressionTypeCheckFails("true != 1")
+        assertTypeCheckFails("true == 1")
+        assertTypeCheckFails("true != 1")
     }
 
     @Test
     fun numericOperators() {
-        assertExpressionType(Type.Int, "1 + 1")
-        assertExpressionType(Type.Int, "1 - 1")
+        assertType(Type.Int, "1 + 1")
+        assertType(Type.Int, "1 - 1")
 
-        assertExpressionTypeCheckFails("1 + true")
-        assertExpressionTypeCheckFails("true + 1")
-        assertExpressionTypeCheckFails("true + true")
-        assertExpressionTypeCheckFails("1 + \"foo\"")
-        assertExpressionTypeCheckFails("true + \"foo\"")
+        assertTypeCheckFails("1 + true")
+        assertTypeCheckFails("true + 1")
+        assertTypeCheckFails("true + true")
+        assertTypeCheckFails("1 + \"foo\"")
+        assertTypeCheckFails("true + \"foo\"")
 
-        assertExpressionTypeCheckFails("1 - true")
-        assertExpressionTypeCheckFails("true - 1")
-        assertExpressionTypeCheckFails("true - true")
-        assertExpressionTypeCheckFails("\"foo\" - \"bar\"")
+        assertTypeCheckFails("1 - true")
+        assertTypeCheckFails("true - 1")
+        assertTypeCheckFails("true - true")
+        assertTypeCheckFails("\"foo\" - \"bar\"")
+    }
+
+    @Test
+    fun ifWithoutElseProducesUnit() {
+        assertType(Type.Unit, "if (true) 42")
+    }
+
+    @Test
+    fun ifWithIncompatibleTypesProducesUnit() {
+        assertType(Type.Unit, "if (true) 42 else false")
+    }
+
+    @Test
+    fun ifWithCompatibleTypesReturnsTheCommonType() {
+        assertType(Type.Int, "if (true) 42 else 31")
+        assertType(Type.String, "if (true) \"foo\" else \"bar\"")
     }
 
     @Test
     fun plusWithStringLiteral() {
-        assertExpressionType(Type.String, "\"foo\" + \"bar\"")
-        assertExpressionType(Type.String, "\"foo\" + 42")
-        assertExpressionType(Type.String, "\"foo\" + true")
+        assertType(Type.String, "\"foo\" + \"bar\"")
+        assertType(Type.String, "\"foo\" + 42")
+        assertType(Type.String, "\"foo\" + true")
     }
 
     @Test
     fun variableCanBeReboundInNestedEnvironment() {
         env.bind("x", Type.Boolean)
 
-        typeCheckStatement("if (x) { var x = 42; }")
-        typeCheckStatement("while (x) { var x = 42; }")
+        typeCheck("if (x) { var x = 42 }")
+        typeCheck("while (x) { var x = 42 }")
     }
 
     @Test
     fun variableIsVisibleInNestedEnvironment() {
-        typeCheckStatement("""
+        typeCheck("""
             if (true) {
                 var x = 4;
                 if (true) {
-                    var y = x;
+                    var y = x
                 }
             }
             """)
@@ -94,44 +109,44 @@ class TypeCheckerTest {
 
     @Test
     fun variablesDefinedByNestedEnvironmentAreNotVisibleOutside() {
-        assertStatementTypeCheckFails("""
+        assertTypeCheckFails("""
             if (true) {
                 if (true) {
-                    var x = 4;
-                }
-                var y = x;
+                    var x = 4
+                };
+                var y = x
             }
             """)
     }
 
     @Test
     fun unboundVariables() {
-        assertExpressionTypeCheckFails("x")
-        assertStatementTypeCheckFails("x = 4;")
+        assertTypeCheckFails("x")
+        assertTypeCheckFails("x = 4")
     }
 
     @Test
     fun evaluationFailsForRebindingVariables() {
-        assertStatementTypeCheckFails("{ var x = 4; var x = 4; }")
+        assertTypeCheckFails("{ var x = 4; var x = 4 }")
     }
 
     @Test
     fun unboundVariableType() {
-        assertExpressionTypeCheckFails("s")
+        assertTypeCheckFails("s")
     }
 
     @Test
     fun assigningToParameters() {
         env = GlobalStaticEnvironment().newScope(listOf("foo" to Type.Int))
-        assertStatementTypeCheckFails("foo = 42;")
+        assertTypeCheckFails("foo = 42")
     }
 
     @Test
     fun assignmentToImmutableVariables() {
-        assertStatementTypeCheckFails("""
+        assertTypeCheckFails("""
             if (true) {
                 val x = 4;
-                x = 2;
+                x = 2
             }
         """)
     }
@@ -140,46 +155,36 @@ class TypeCheckerTest {
     fun relationalOperatorsAreNotSupportedForUnit() {
         env.bind("foo", Type.Unit)
 
-        assertExpressionTypeCheckFails("foo == foo")
-        assertExpressionTypeCheckFails("foo != foo")
-        assertExpressionTypeCheckFails("foo < foo")
-        assertExpressionTypeCheckFails("foo > foo")
-        assertExpressionTypeCheckFails("foo <= foo")
-        assertExpressionTypeCheckFails("foo >= foo")
+        assertTypeCheckFails("foo == foo")
+        assertTypeCheckFails("foo != foo")
+        assertTypeCheckFails("foo < foo")
+        assertTypeCheckFails("foo > foo")
+        assertTypeCheckFails("foo <= foo")
+        assertTypeCheckFails("foo >= foo")
     }
 
     @Test
     fun relationalOperatorsAreNotSupportedForFunctions() {
         env.bind("foo", Type.Function(listOf(Type.String), Type.Int))
 
-        assertExpressionTypeCheckFails("foo == foo")
-        assertExpressionTypeCheckFails("foo != foo")
-        assertExpressionTypeCheckFails("foo < foo")
-        assertExpressionTypeCheckFails("foo > foo")
-        assertExpressionTypeCheckFails("foo <= foo")
-        assertExpressionTypeCheckFails("foo >= foo")
+        assertTypeCheckFails("foo == foo")
+        assertTypeCheckFails("foo != foo")
+        assertTypeCheckFails("foo < foo")
+        assertTypeCheckFails("foo > foo")
+        assertTypeCheckFails("foo <= foo")
+        assertTypeCheckFails("foo >= foo")
     }
 
-    private fun assertExpressionTypeCheckFails(code: String) {
+    private fun assertTypeCheckFails(code: String) {
         assertFailsWith<TypeCheckException> {
-            typeCheckExpression(code)
+            typeCheck(code)
         }
     }
 
-    private fun assertStatementTypeCheckFails(code: String) {
-        assertFailsWith<TypeCheckException> {
-            typeCheckStatement(code)
-        }
+    private fun assertType(expectedType: Type, code: String) {
+        assertEquals(expectedType, typeCheck(code).type)
     }
 
-    private fun assertExpressionType(expectedType: Type, code: String) {
-        assertEquals(expectedType, typeCheckExpression(code).type)
-    }
-
-    private fun typeCheckExpression(code: String) =
+    private fun typeCheck(code: String) =
         parseExpression(code).typeCheck(env)
-
-    private fun typeCheckStatement(code: String) =
-        parseStatement(code).typeCheck(env)
-
 }

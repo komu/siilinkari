@@ -1,7 +1,9 @@
 package siilinkari.parser
 
-import siilinkari.ast.*
+import siilinkari.ast.Expression
 import siilinkari.ast.Expression.Binary
+import siilinkari.ast.FunctionDefinition
+import siilinkari.ast.RelationalOp
 import siilinkari.lexer.*
 import siilinkari.lexer.Token.*
 import siilinkari.lexer.Token.Punctuation.LeftBrace
@@ -9,34 +11,18 @@ import siilinkari.types.Type
 import java.util.*
 
 /**
- * Parse [code] as [Statement].
- *
- * @throws SyntaxErrorException if parsing fails
- */
-fun parseStatement(code: String): Statement =
-    parseComplete(code) { it.parseStatement() }
-
-/**
  * Parse [code] as [Expression].
  *
  * @throws SyntaxErrorException if parsing fails
  */
 fun parseExpression(code: String): Expression =
-    parseComplete(code) { it.parseExpression() }
+    parseComplete(code) { it.parseTopLevelExpression() }
 
 /**
  * Parses a function definition.
  */
 fun parseFunctionDefinition(code: String): FunctionDefinition =
     parseComplete(code) { it.parseFunctionDefinition() }
-
-
-fun parseExpressionOrStatement(code: String): ExpressionOrStatement =
-    try {
-        ExpressionOrStatement.Exp(parseExpression(code))
-    } catch (ignored: SyntaxErrorException) {
-        ExpressionOrStatement.Stmt(parseStatement(code))
-    }
 
 /**
  * Executes parser on code and verifies that it consumes all input.
@@ -76,29 +62,22 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * statement ::= if | while | var | statement-list | ident "=" expression | expression
+     * topLevelExpr ::= | var | '{' exps '}' | ident "=" expression | expression
      * ```
      */
-    fun parseStatement(): Statement = when (lexer.peekToken().token) {
-        Keyword.If      -> parseIf()
-        Keyword.While   -> parseWhile()
+    fun parseTopLevelExpression(): Expression = when (lexer.peekToken().token) {
         Keyword.Var     -> parseVariableDefinition()
         Keyword.Val     -> parseVariableDefinition()
-        LeftBrace       -> parseStatementList()
+        LeftBrace       -> parseExpressionList()
         is Identifier   -> {
             val exp = parseExpression();
-            val stmt = if (exp is Expression.Ref && lexer.nextTokenIs(Punctuation.Equal))
+            if (exp is Expression.Ref && lexer.nextTokenIs(Punctuation.Equal))
                 parseAssignTo(exp.name)
             else
-                Statement.Exp(exp)
-            lexer.expect(Punctuation.Semicolon)
-            stmt
+                exp
         }
-        else -> {
-            val exp = parseExpression()
-            lexer.expect(Punctuation.Semicolon)
-            Statement.Exp(exp)
-        }
+        else ->
+            parseExpression()
     }
 
     /**
@@ -219,7 +198,7 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * expression5 ::= identifier | literal | not | "(" expression ")"
+     * expression5 ::= identifier | literal | not | "(" expression ")" | if | while
      * ```
      */
     private fun parseExpression6(): Expression {
@@ -228,57 +207,57 @@ private class Parser(lexer: Lexer) {
         return when (token) {
             is Token.Identifier      -> parseIdentifier()
             is Token.Literal         -> parseLiteral()
-            is Operator.Not          -> parseNot()
-            is Punctuation.LeftParen -> inParens { parseExpression() }
+            Operator.Not             -> parseNot()
+            Punctuation.LeftParen    -> inParens { parseTopLevelExpression() }
+            Keyword.If               -> parseIf()
+            Keyword.While            -> parseWhile()
             else                     -> fail(location, "unexpected token $token")
         }
     }
 
-    private fun parseAssignTo(variable: String): Statement {
+    private fun parseAssignTo(variable: String): Expression {
         val location = lexer.expect(Punctuation.Equal)
         val rhs = parseExpression()
 
-        return Statement.Assign(variable, rhs, location)
+        return Expression.Assign(variable, rhs, location)
     }
 
-    private fun parseVariableDefinition(): Statement {
+    private fun parseVariableDefinition(): Expression {
         val mutable = lexer.nextTokenIs(Keyword.Var)
         val location = if (mutable) lexer.expect(Keyword.Var) else lexer.expect(Keyword.Val)
 
         val variable = parseName().first
         lexer.expect(Punctuation.Equal)
         val expression = parseExpression()
-        lexer.expect(Punctuation.Semicolon);
 
-        return Statement.Var(variable, expression, mutable, location)
+        return Expression.Var(variable, expression, mutable, location)
     }
 
-    private fun parseIf(): Statement {
+    private fun parseIf(): Expression {
         val location = lexer.expect(Keyword.If)
         val condition = inParens { parseExpression() }
-        val consequent = parseStatement()
-        val alternative = if (lexer.readNextIf(Keyword.Else)) parseStatement() else null
+        val consequent = parseTopLevelExpression()
+        val alternative = if (lexer.readNextIf(Keyword.Else)) parseTopLevelExpression() else null
 
-        return Statement.If(condition, consequent, alternative, location)
+        return Expression.If(condition, consequent, alternative, location)
     }
 
-    private fun parseWhile(): Statement {
+    private fun parseWhile(): Expression {
         val location = lexer.expect(Keyword.While)
         val condition = inParens { parseExpression() }
-        val body = parseStatement()
+        val body = parseTopLevelExpression()
 
-        return Statement.While(condition, body, location)
+        return Expression.While(condition, body, location)
     }
 
-    private fun parseStatementList(): Statement {
+    private fun parseExpressionList(): Expression {
         val location = lexer.nextTokenLocation()
-        return inBraces {
-            val statements = ArrayList<Statement>()
-            while (!lexer.nextTokenIs(Punctuation.RightBrace))
-                statements += parseStatement()
-
-            Statement.StatementList(statements, location)
-        }
+        return Expression.ExpressionList(inBraces {
+            if (lexer.nextTokenIs(Punctuation.RightBrace))
+                emptyList()
+            else
+                separatedBy(Punctuation.Semicolon) { parseTopLevelExpression() }
+        }, location)
     }
 
     private fun parseLiteral(): Expression.Lit {
@@ -360,6 +339,16 @@ private class Parser(lexer: Lexer) {
         val value = parser()
         lexer.expect(right)
         return value
+    }
+
+    private inline fun <T> separatedBy(separator: Token, parser: () -> T): List<T> {
+        val result = ArrayList<T>()
+
+        do {
+            result += parser()
+        } while (lexer.readNextIf(separator))
+
+        return result
     }
 
     private fun fail(location: SourceLocation, message: String): Nothing =

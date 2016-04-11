@@ -67,26 +67,27 @@ sealed class TypedExpression(val type: Type) {
         }
     }
 
-    sealed class Stmt : TypedExpression(Type.Unit) {
+    class Assign(val variable: Binding, val expression: TypedExpression) : TypedExpression(Type.Unit) {
+        override fun toString() = "[Assign $variable $expression]"
+    }
 
-        class Assign(val variable: Binding, val expression: TypedExpression) : Stmt() {
-            override fun toString() = "[Assign $variable $expression]"
+    class Var(val variable: Binding, val expression: TypedExpression) : TypedExpression(Type.Unit) {
+        override fun toString() = "[Var $variable $expression]"
+    }
+
+    class If(val condition: TypedExpression, val consequent: TypedExpression, val alternative: TypedExpression?, type: Type) : TypedExpression(type) {
+        init {
+            require(alternative != null || type == Type.Unit)
         }
 
-        class Var(val variable: Binding, val expression: TypedExpression) : Stmt() {
-            override fun toString() = "[Var $variable $expression]"
-        }
+        override fun toString() = "[If $condition $consequent ${alternative ?: "[]"}]"
+    }
 
-        class If(val condition: TypedExpression, val consequent: TypedExpression, val alternative: TypedExpression?) : Stmt() {
-            override fun toString() = "[If $condition $consequent ${alternative ?: "[]"}]"
-        }
+    class While(val condition: TypedExpression, val body: TypedExpression) : TypedExpression(Type.Unit) {
+        override fun toString() = "[While $condition $body]"
+    }
 
-        class While(val condition: TypedExpression, val body: TypedExpression) : Stmt() {
-            override fun toString() = "[While $condition $body]"
-        }
-
-        class ExpressionList(val statements: List<TypedExpression>) : Stmt() {
-            override fun toString() = "[ExpressionList $statements]"
-        }
+    class ExpressionList(val expressions: List<TypedExpression>) : TypedExpression(Type.Unit) {
+        override fun toString() = "[ExpressionList $expressions]"
     }
 }

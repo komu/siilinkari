@@ -18,12 +18,12 @@ and play around.
 ```
 # java -jar build/libs/siilinkari-all.jar
 Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.
-> var x = 4;
-> var s = "";
-> if (x == 2 + 2) { var t = "It"; s = t + " worked!"; }
+> var x = 4
+> var s = ""
+> if (x == 2 + 2) { var t = "It"; s = t + " worked!" }
 > s
 "It worked!"
-> :dump if (x == 2 + 2) { var t = "It"; s = t + " worked!"; }
+> :dump if (x == 2 + 2) { var t = "It"; s = t + " worked!" }
 0 LoadGlobal 2 ; x
 1 Push 4
 2 Equal

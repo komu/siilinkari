@@ -5,7 +5,6 @@ import siilinkari.env.Binding
 import siilinkari.objects.Value
 import siilinkari.types.TypedExpression
 import siilinkari.types.TypedExpression.*
-import siilinkari.types.TypedExpression.Stmt.*
 import java.util.*
 
 fun TypedExpression.evaluateConstantExpressions(): TypedExpression = eval(ConstantBindingEnv())
@@ -16,22 +15,18 @@ private fun TypedExpression.eval(env: ConstantBindingEnv): TypedExpression = whe
     is Call     -> Call(func.eval(env), args.map { it.eval(env) }, type)
     is Not      -> eval(env)
     is Binary   -> eval(env)
-    is Stmt     -> eval(env)
-}
-
-private fun TypedExpression.Stmt.eval(env: ConstantBindingEnv): TypedExpression = when (this) {
-    is Assign           -> Assign(variable, expression.eval(env))
-    is Var              -> {
+    is Assign   -> Assign(variable, expression.eval(env))
+    is Var      -> {
         val value = expression.eval(env)
         if (value is Lit && value.value.immutable && !variable.mutable)
             env[variable] = value.value
         Var(variable, value)
     }
-    is If               -> eval(env)
-    is While            -> eval(env)
+    is If       -> eval(env)
+    is While    -> eval(env)
     is ExpressionList   -> {
         val childEnv = env.child()
-        statements.singleOrNull()?.eval(childEnv) ?: ExpressionList(statements.map { it.eval(childEnv) })
+        expressions.singleOrNull()?.eval(childEnv) ?: ExpressionList(expressions.map { it.eval(childEnv) })
     }
 }
 
@@ -43,7 +38,7 @@ private fun If.eval(env: ConstantBindingEnv): TypedExpression {
         else
             alternative?.eval(env.child()) ?: ExpressionList(emptyList())
     } else {
-        If(optCondition, consequent.eval(env.child()), alternative?.eval(env.child()));
+        If(optCondition, consequent.eval(env.child()), alternative?.eval(env.child()), type);
     }
 }
 
@@ -57,10 +52,11 @@ private fun While.eval(env: ConstantBindingEnv): TypedExpression {
 
 private fun Not.eval(env: ConstantBindingEnv): TypedExpression {
     val optExp = exp.eval(env)
-    return if (optExp is Lit)
-        Lit(!(optExp.value as Value.Bool))
-    else
-        optExp
+    return when (optExp) {
+        is Lit -> Lit(!(optExp.value as Value.Bool))
+        is Not -> optExp.exp
+        else -> Not(optExp)
+    }
 }
 
 private fun TypedExpression.Binary.eval(env: ConstantBindingEnv): TypedExpression {
