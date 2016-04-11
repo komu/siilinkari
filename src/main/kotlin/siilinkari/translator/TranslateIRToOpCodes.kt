@@ -5,6 +5,12 @@ import siilinkari.vm.CodeSegment
 import siilinkari.vm.OpCode
 import java.util.*
 
+fun BasicBlockGraph.translateToCode(): CodeSegment {
+    val code = CodeSegment.Builder()
+    translateTo(code)
+    return code.build()
+}
+
 fun BasicBlockGraph.translateTo(ops: CodeSegment.Builder) {
     val blocks = allBlocks()
 
@@ -54,10 +60,14 @@ private fun IR.translate(): OpCode = when (this) {
     IR.Pop              -> OpCode.Pop
     IR.Dup              -> OpCode.Dup
     IR.Call             -> OpCode.Call
+    IR.Ret              -> OpCode.Ret
+    IR.Quit             -> OpCode.Quit
     is IR.Push          -> OpCode.Push(value)
     is IR.LoadLocal     -> OpCode.LoadLocal(index, name)
     is IR.LoadGlobal    -> OpCode.LoadGlobal(index, name)
     is IR.LoadArgument  -> OpCode.LoadArgument(index, name)
     is IR.StoreLocal    -> OpCode.StoreLocal(index, name)
     is IR.StoreGlobal   -> OpCode.StoreGlobal(index, name)
+    is IR.Enter         -> OpCode.Enter(frameSize)
+    is IR.Leave         -> OpCode.Leave(paramCount)
 }

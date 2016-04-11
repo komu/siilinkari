@@ -4,36 +4,25 @@ import siilinkari.ast.RelationalOp
 import siilinkari.env.Binding
 import siilinkari.types.TypedExpression
 import siilinkari.types.TypedStatement
-import siilinkari.vm.CodeSegment
+
+fun TypedStatement.translateToIR(): BasicBlockGraph {
+    val translator = Translator()
+    translator.run { emitCode() }
+    return translator.basicBlocks
+}
+
+fun TypedExpression.translateToIR(): BasicBlockGraph {
+    val translator = Translator()
+    translator.run { emitCode() }
+    return translator.basicBlocks
+}
 
 class Translator() {
 
-    private val basicBlocks = BasicBlockGraph()
+    val basicBlocks = BasicBlockGraph()
     private var currentBlock = basicBlocks.start
 
-    fun translateStatement(stmt: TypedStatement) {
-        stmt.emitCode()
-    }
-
-    fun translateExpression(exp: TypedExpression) {
-        exp.emitCode()
-    }
-
-    fun optimize() {
-        basicBlocks.optimize()
-    }
-
-    fun translateTo(ops: CodeSegment.Builder) {
-        basicBlocks.translateTo(ops)
-    }
-
-    fun translateToCode(): CodeSegment {
-        val code = CodeSegment.Builder()
-        translateTo(code)
-        return code.build()
-    }
-
-    private fun TypedStatement.emitCode() {
+    fun TypedStatement.emitCode() {
         when (this) {
             is TypedStatement.Exp -> {
                 expression.emitCode()
@@ -104,7 +93,7 @@ class Translator() {
         }
     }
 
-    private fun TypedExpression.emitCode() {
+    fun TypedExpression.emitCode() {
         when (this) {
             is TypedExpression.Ref ->
                 binding.emitLoad()

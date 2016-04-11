@@ -22,6 +22,11 @@ sealed class IR {
     object Pop : IR()
     object Dup : IR()
     object Call : IR()
+    object Ret : IR()
+    object Quit : IR()
+
+    class Enter(val frameSize: Int) : IR()
+    class Leave(val paramCount: Int) : IR()
 
     class Push(val value: Value) : IR() {
         override fun toString() = "Push ${value.repr()}"

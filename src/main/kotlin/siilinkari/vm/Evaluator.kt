@@ -11,7 +11,9 @@ import siilinkari.parser.parseExpression
 import siilinkari.parser.parseFunctionDefinition
 import siilinkari.parser.parseStatement
 import siilinkari.translator.FunctionTranslator
-import siilinkari.translator.Translator
+import siilinkari.translator.IR
+import siilinkari.translator.translateToCode
+import siilinkari.translator.translateToIR
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
 import siilinkari.types.typeCheck
@@ -86,14 +88,11 @@ class Evaluator {
     fun evaluateExpression(code: String): Value {
         val exp = parseExpression(code)
         val typedExp = exp.typeCheck(globalTypeEnvironment).optimize()
-        val translated = CodeSegment.Builder()
 
-        val translator = Translator()
-        translator.translateExpression(typedExp)
-        translator.optimize()
-        translator.translateTo(translated)
-
-        translated += OpCode.Quit
+        val basicBlocks = typedExp.translateToIR()
+        basicBlocks.optimize()
+        basicBlocks.end += IR.Quit
+        val translated = basicBlocks.translateToCode()
 
         return evaluateSegment(translated)
     }
@@ -110,28 +109,25 @@ class Evaluator {
     /**
      * Translates code to opcodes.
      */
-    private fun translate(code: String): CodeSegment.Builder {
+    private fun translate(code: String): CodeSegment {
         val stmt = parseStatement(code)
         val typedStmt = stmt.typeCheck(globalTypeEnvironment).optimize()
 
-        val translator = Translator()
-        if (typedStmt is TypedStatement.Exp)
-            translator.translateExpression(typedStmt.expression)
+        val blocks = if (typedStmt is TypedStatement.Exp)
+            typedStmt.expression.translateToIR()
         else
-            translator.translateStatement(typedStmt)
+            typedStmt.translateToIR()
 
-        translator.optimize()
+        blocks.optimize()
+        blocks.end += IR.Quit
 
-        val translated = CodeSegment.Builder()
-        translator.translateTo(translated)
-        translated += OpCode.Quit
-        return translated
+        return blocks.translateToCode()
     }
 
     /**
      * Evaluates given code segment.
      */
-    private fun evaluateSegment(segment: CodeSegment.Builder): Value {
+    private fun evaluateSegment(segment: CodeSegment): Value {
         // Relocate code to be evaluated after the global code into a single segment.
         val codeBuilder = CodeSegment.Builder(globalCode)
         val startAddress = codeBuilder.addRelocated(segment)

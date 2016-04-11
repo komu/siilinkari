@@ -1,20 +1,32 @@
 package siilinkari.translator
 
 import siilinkari.optimizer.peepholeOptimize
+import siilinkari.vm.CodeSegment
 import java.util.*
 
 /**
  * Graph of basic blocks for a single function, method etc.
- *
  */
 class BasicBlockGraph {
 
     val start = BasicBlock()
 
+    val end: BasicBlock
+        get() = allBlocksInArbitraryOrder().single { it.next == BasicBlock.BlockEnd.None }
+
     fun optimize() {
         for (block in allBlocksInArbitraryOrder())
             block.peepholeOptimize()
     }
+
+
+    val frameSize: Int
+        get() {
+            // TODO: avoid building segment just to get frame-size
+            val sb = CodeSegment.Builder()
+            translateTo(sb)
+            return sb.frameSize
+        }
 
     fun BasicBlockGraph.allBlocks(): Collection<BasicBlock> {
         val blocks = allBlocksInArbitraryOrder()

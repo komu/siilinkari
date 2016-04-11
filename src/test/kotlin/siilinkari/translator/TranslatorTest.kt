@@ -45,10 +45,9 @@ class TranslatorTest {
     private fun translateStatement(source: String): String {
         val typed = parseStatement(source).typeCheck(GlobalStaticEnvironment())
 
-        val translator = Translator()
-        translator.translateStatement(typed)
-        translator.optimize()
+        val blocks = typed.translateToIR()
+        blocks.optimize()
 
-        return translator.translateToCode().toString()
+        return blocks.translateToCode().toString()
     }
 }

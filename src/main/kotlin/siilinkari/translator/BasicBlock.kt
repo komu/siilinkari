@@ -37,6 +37,10 @@ class BasicBlock() {
         opCodes += op
     }
 
+    fun prepend(op: IR) {
+        opCodes.add(0, op)
+    }
+
     fun endWithJumpTo(next: BasicBlock) {
         check(this.next == BlockEnd.None)
         this.next = BlockEnd.Jump(next)
