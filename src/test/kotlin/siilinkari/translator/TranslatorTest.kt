@@ -4,7 +4,6 @@ import org.junit.Test
 import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.parser.parseStatement
 import siilinkari.types.typeCheck
-import siilinkari.vm.CodeSegment
 import kotlin.test.assertEquals
 
 class TranslatorTest {
@@ -43,11 +42,13 @@ class TranslatorTest {
         assertEquals(translated.trimIndent(), translateStatement(source))
     }
 
-    private fun translateStatement(code: String): String {
-        val typed = parseStatement(code).typeCheck(GlobalStaticEnvironment())
+    private fun translateStatement(source: String): String {
+        val typed = parseStatement(source).typeCheck(GlobalStaticEnvironment())
 
-        val segment = CodeSegment.Builder()
-        typed.translateTo(segment)
-        return segment.build().toString()
+        val translator = Translator()
+        translator.translateStatement(typed)
+        translator.optimize()
+
+        return translator.translateToCode().toString()
     }
 }

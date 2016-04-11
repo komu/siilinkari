@@ -6,27 +6,34 @@ import siilinkari.types.TypedExpression
 import siilinkari.types.TypedStatement
 import siilinkari.vm.CodeSegment
 
-/**
- * Translates [TypedStatement] to [CodeSegment] containing OpCodes for vm to run.
- */
-fun TypedStatement.translateTo(code: CodeSegment.Builder) {
-    val startBlock = BasicBlock()
-    Translator(startBlock).apply { emitCode() }
-    translateBasicBlocksTo(startBlock, code)
-}
+class Translator() {
 
-/**
- * Translates [TypedExpression] to [CodeSegment] containing OpCodes for vm to run.
- */
-fun TypedExpression.translateTo(code: CodeSegment.Builder) {
-    val startBlock = BasicBlock()
-    Translator(startBlock).apply { emitCode() }
-    translateBasicBlocksTo(startBlock, code)
-}
+    private val basicBlocks = BasicBlockGraph()
+    private var currentBlock = basicBlocks.start
 
-class Translator(private var currentBlock: BasicBlock) {
+    fun translateStatement(stmt: TypedStatement) {
+        stmt.emitCode()
+    }
 
-    fun TypedStatement.emitCode() {
+    fun translateExpression(exp: TypedExpression) {
+        exp.emitCode()
+    }
+
+    fun optimize() {
+        basicBlocks.optimize()
+    }
+
+    fun translateTo(ops: CodeSegment.Builder) {
+        basicBlocks.translateTo(ops)
+    }
+
+    fun translateToCode(): CodeSegment {
+        val code = CodeSegment.Builder()
+        translateTo(code)
+        return code.build()
+    }
+
+    private fun TypedStatement.emitCode() {
         when (this) {
             is TypedStatement.Exp -> {
                 expression.emitCode()
@@ -97,7 +104,7 @@ class Translator(private var currentBlock: BasicBlock) {
         }
     }
 
-    fun TypedExpression.emitCode() {
+    private fun TypedExpression.emitCode() {
         when (this) {
             is TypedExpression.Ref ->
                 binding.emitLoad()

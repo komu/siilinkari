@@ -14,8 +14,13 @@ class FunctionTranslator(val env: GlobalStaticEnvironment) {
     fun translateFunction(func: FunctionDefinition): CodeSegment {
         val typedExp = func.body.typeCheckExpected(func.returnType, env.newScope(func.args)).optimize()
 
+        val translator = Translator()
+        translator.translateExpression(typedExp)
+
+        translator.optimize()
+
         val functionBodyCode = CodeSegment.Builder()
-        typedExp.translateTo(functionBodyCode)
+        translator.translateTo(functionBodyCode)
 
         val finalCode = CodeSegment.Builder()
         finalCode += OpCode.Enter(functionBodyCode.frameSize)

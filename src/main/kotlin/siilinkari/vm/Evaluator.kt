@@ -11,7 +11,7 @@ import siilinkari.parser.parseExpression
 import siilinkari.parser.parseFunctionDefinition
 import siilinkari.parser.parseStatement
 import siilinkari.translator.FunctionTranslator
-import siilinkari.translator.translateTo
+import siilinkari.translator.Translator
 import siilinkari.types.TypedStatement
 import siilinkari.types.type
 import siilinkari.types.typeCheck
@@ -87,7 +87,12 @@ class Evaluator {
         val exp = parseExpression(code)
         val typedExp = exp.typeCheck(globalTypeEnvironment).optimize()
         val translated = CodeSegment.Builder()
-        typedExp.translateTo(translated)
+
+        val translator = Translator()
+        translator.translateExpression(typedExp)
+        translator.optimize()
+        translator.translateTo(translated)
+
         translated += OpCode.Quit
 
         return evaluateSegment(translated)
@@ -109,12 +114,16 @@ class Evaluator {
         val stmt = parseStatement(code)
         val typedStmt = stmt.typeCheck(globalTypeEnvironment).optimize()
 
+        val translator = Translator()
+        if (typedStmt is TypedStatement.Exp)
+            translator.translateExpression(typedStmt.expression)
+        else
+            translator.translateStatement(typedStmt)
+
+        translator.optimize()
+
         val translated = CodeSegment.Builder()
-        if (typedStmt is TypedStatement.Exp) {
-            typedStmt.expression.translateTo(translated)
-        } else {
-            typedStmt.translateTo(translated)
-        }
+        translator.translateTo(translated)
         translated += OpCode.Quit
         return translated
     }
