@@ -4,6 +4,7 @@ import org.junit.Test
 import siilinkari.objects.Value
 import siilinkari.objects.value
 import siilinkari.runtime.fun1
+import siilinkari.runtime.fun2
 import siilinkari.types.Type
 import siilinkari.types.TypeCheckException
 import kotlin.test.assertEquals
@@ -11,7 +12,9 @@ import kotlin.test.assertFailsWith
 
 class EvaluatorTest {
 
-    val evaluator = Evaluator()
+    val evaluator = Evaluator().apply {
+        trace = false
+    }
 
     @Test
     fun literalEvaluation() {
@@ -194,10 +197,17 @@ class EvaluatorTest {
     }
 
     @Test
-    fun nativeFunctionCalls() {
+    fun nativeFunctionCallWithSingleParameter() {
         evaluator.bind("inc", fun1<Value.Integer>("inc", Type.Int, Type.Int) { it + 1.value }, mutable = false)
 
         assertEvaluation("inc(4)", 5.value)
+    }
+
+    @Test
+    fun nativeFunctionWithMultipleParameters() {
+        evaluator.bind("sub", fun2<Value.Integer>("sub", Type.Int, Type.Int) { a, b -> a - b }, mutable = false)
+
+        assertEvaluation("sub(7, 4)", 3.value)
     }
 
     private fun assertTypeCheckFails(s: String) {

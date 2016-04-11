@@ -2,7 +2,8 @@ package siilinkari.translator
 
 import org.junit.Test
 import siilinkari.vm.Evaluator
-import kotlin.test.assertEquals
+import java.util.*
+import kotlin.test.fail
 
 class TranslatorTest {
 
@@ -18,22 +19,22 @@ class TranslatorTest {
             }
             """,
             """
-            0 Push 5
-            1 StoreLocal 0 ; x
-            2 Jump 3
-            3 LoadLocal 0 ; x
-            4 Push 0
-            5 Equal
-            6 Not
-            7 JumpIfFalse 14
-            8 Jump 9
-            9 LoadLocal 0 ; x
-            10 Push 1
-            11 Subtract
-            12 StoreLocal 0 ; x
-            13 Jump 3
-            14 PushUnit
-            15 Quit
+            0 frame[2] = Constant(5)
+            1 frame[1] = frame[2] ; store local x
+            2 jump 3
+            3 frame[2] = frame[1] ; load local x
+            4 frame[3] = Constant(0)
+            5 frame[2] = frame[2] == frame[3]
+            6 frame[2] = !frame[2]
+            7 jump-if-false frame[2] 14
+            8 jump 9
+            9 frame[2] = frame[1] ; load local x
+            10 frame[3] = Constant(1)
+            11 frame[2] = frame[2] - frame[3]
+            12 frame[1] = frame[2] ; store local x
+            13 jump 3
+            14 frame[2] = Constant(Unit)
+            15 ret value=frame[2], address=frame[0]
             """)
     }
 
@@ -47,28 +48,48 @@ class TranslatorTest {
             }
             """,
             """
-            0 Push 4
-            1 StoreLocal 0 ; x
-            2 Push ""
-            3 StoreLocal 1 ; s
-            4 LoadLocal 0 ; x
-            5 Push 4
-            6 Equal
-            7 JumpIfFalse 16
-            8 Jump 9
-            9 Push "It"
-            10 Dup
-            11 StoreLocal 2 ; t
-            12 Push " worked!"
-            13 ConcatString
-            14 StoreLocal 1 ; s
-            15 Jump 16
-            16 PushUnit
-            17 Quit
+            0 frame[4] = Constant(4)
+            1 frame[1] = frame[4] ; store local x
+            2 frame[4] = Constant("")
+            3 frame[2] = frame[4] ; store local s
+            4 frame[4] = frame[1] ; load local x
+            5 frame[5] = Constant(4)
+            6 frame[4] = frame[4] == frame[5]
+            7 jump-if-false frame[4] 16
+            8 jump 9
+            9 frame[4] = Constant("It")
+            10 frame[5] = frame[4] ; dup
+            11 frame[3] = frame[5] ; store local t
+            12 frame[5] = Constant(" worked!")
+            13 frame[4] = frame[4] ++ frame[5]
+            14 frame[2] = frame[4] ; store local s
+            15 jump 16
+            16 frame[4] = Constant(Unit)
+            17 ret value=frame[4], address=frame[0]
             """)
     }
 
-    private fun assertTranslation(source: String, translated: String) {
-        assertEquals(translated.trimIndent(), evaluator.dump(source))
+    private fun assertTranslation(source: String, expectedInstructionsAsString: String) {
+        val instructions = evaluator.dump(source).lines().map { it.trim() }
+        val expectedInstructions = expectedInstructionsAsString.trimIndent().lines().map { it.trim() }
+
+        if (instructions != expectedInstructions) {
+
+            val errors = ArrayList<String>()
+            if (instructions.size != expectedInstructions.size)
+                errors += "amount of instructions didn't match: expected ${expectedInstructions.size}, but got ${instructions.size}"
+
+            instructions.zip(expectedInstructions).forEachIndexed { i, pair ->
+                val (instruction, expected) = pair
+
+                if (instruction != expected)
+                    errors += "$i: expected '$expected', but got '$instruction'"
+            }
+
+            if (errors.isEmpty())
+                errors += "expected: $expectedInstructions, but got $instructions"
+
+            fail("translation of:\n\n${source.replaceIndent("  ")}\n\nproduced unexpected results:\n${errors.joinToString("\n") { "  - $it" }}")
+        }
     }
 }

@@ -22,19 +22,22 @@ Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.
 > var s = ""
 > if (x == 2 + 2) { var t = "It"; s = t + " worked!" }
 > s
-"It worked!"
+String = "It worked!"
 > :dump if (x == 2 + 2) { var t = "It"; s = t + " worked!" }
-0 LoadGlobal 2 ; x
-1 Push 4
-2 Equal
-3 JumpIfFalse 10
-4 Push "It"
-5 StoreLocal 0 ; t
-6 LoadLocal 0 ; t
-7 Push " worked!"
-8 ConcatString
-9 StoreGlobal 3 ; s
-10 Quit
+0 frame[2] = global[4] ; x
+1 frame[3] = Constant(4)
+2 frame[2] = frame[2] == frame[3]
+3 jump-if-false frame[2] 12
+4 jump 5
+5 frame[2] = Constant("It")
+6 frame[3] = frame[2] ; (dup)
+7 frame[1] = frame[3] ; store local t
+8 frame[3] = Constant(" worked!")
+9 frame[2] = frame[2] ++ frame[3]
+10 global[5] = frame[2] ; s
+11 jump 12
+12 frame[2] = Constant(Unit)
+13 quit frame[2]
 > exit
 Thank you for visiting Siilinkari, have a nice day!
 ```

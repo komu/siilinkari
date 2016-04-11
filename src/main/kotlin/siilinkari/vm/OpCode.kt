@@ -7,73 +7,60 @@ sealed class OpCode {
 
     open fun relocate(baseAddress: Int) = this
 
-    object Not : OpCode()
-    object Add : OpCode()
-    object Subtract : OpCode()
-    object Multiply : OpCode()
-    object Divide : OpCode()
-    object Equal : OpCode()
-    object LessThan : OpCode()
-    object LessThanOrEqual : OpCode()
-    object ConcatString : OpCode()
-    object Pop : OpCode()
-    object Dup : OpCode()
-    object Call : OpCode()
-    object Ret : OpCode()
-    object Quit : OpCode()
-    object PushUnit : OpCode()
-
-    class Push(val value: Value) : OpCode() {
-        override fun toString() = "Push ${value.repr()}"
+    class Not(val target: Int, val source: Int) : OpCode() {
+        override fun toString() = "frame[$target] = !frame[$source]"
     }
 
-    class LoadLocal(val offset: Int, val name: String) : OpCode() {
-        override fun toString() = "LoadLocal $offset ; $name"
+    abstract class Binary(val name: String, val target: Int, val lhs: Int, val rhs: Int) : OpCode() {
+        override fun toString() = "frame[$target] = frame[$lhs] $name frame[$rhs]"
+
+        class Add(t: Int, l: Int, r: Int) : Binary("+", t, l, r)
+        class Subtract(t: Int, l: Int, r: Int) : Binary("-", t, l, r)
+        class Multiply(t: Int, l: Int, r: Int) : Binary("*", t, l, r)
+        class Divide(t: Int, l: Int, r: Int) : Binary("/", t, l, r)
+        class Equal(t: Int, l: Int, r: Int) : Binary("==", t, l, r)
+        class LessThan(t: Int, l: Int, r: Int) : Binary("<", t, l, r)
+        class LessThanOrEqual(t: Int, l: Int, r: Int) : Binary("<=", t, l, r)
+        class ConcatString(t: Int, l: Int, r: Int) : Binary("++", t, l, r)
     }
 
-    class LoadGlobal(val offset: Int, val name: String) : OpCode() {
-        override fun toString() = "LoadGlobal $offset ; $name"
+    object Nop : OpCode()
+
+    class Call(val offset: Int, val argumentCount: Int) : OpCode() {
+        override fun toString() = "call frame[$offset], $argumentCount"
     }
 
-    class LoadArgument(val offset: Int, val name: String) : OpCode() {
-        override fun toString() = "LoadArgument $offset ; $name"
+    class RestoreFrame(val sp: Int) : OpCode() {
+        override fun toString() = "restore-frame $sp"
     }
 
-    class StoreLocal(val offset: Int, val name: String) : OpCode() {
-        override fun toString() = "StoreLocal $offset ; $name"
+    class Ret(val valuePointer: Int, val returnAddressPointer: Int) : OpCode() {
+        override fun toString() = "ret value=frame[$valuePointer], address=frame[$returnAddressPointer]"
     }
 
-    class StoreGlobal(val offset: Int, val name: String) : OpCode() {
-        override fun toString() = "StoreGlobal $offset ; $name"
+    class Copy(val target: Int, val source: Int, val description: String) : OpCode() {
+        override fun toString() = "frame[$target] = frame[$source] ; $description"
+    }
+
+    class LoadConstant(val target: Int, val value: Value) : OpCode() {
+        override fun toString() = "frame[$target] = Constant(${value.repr()})"
+    }
+
+    class LoadGlobal(val target: Int, val sourceGlobal: Int, val name: String) : OpCode() {
+        override fun toString() = "frame[$target] = global[$sourceGlobal] ; $name"
+    }
+
+    class StoreGlobal(val targetGlobal: Int, val source: Int, val name: String) : OpCode() {
+        override fun toString() = "global[$targetGlobal] = frame[$source] ; $name"
     }
 
     class Jump(val address: Int) : OpCode() {
-        override fun toString() = "Jump $address"
+        override fun toString() = "jump $address"
         override fun relocate(baseAddress: Int) = Jump(baseAddress + address)
     }
 
-    class JumpIfFalse(val address: Int) : OpCode() {
-        override fun toString() = "JumpIfFalse $address"
-        override fun relocate(baseAddress: Int) = JumpIfFalse(baseAddress + address)
-    }
-
-    /**
-     * Enter a stack frame.
-     *
-     * Push current `fp`, set new `fp` to `sp` and calculate new `sp = fp + frameSize`.
-     */
-    class Enter(val frameSize: Int) : OpCode() {
-        override fun toString() = "Enter $frameSize"
-    }
-
-    /**
-     * Leaves a stack frame.
-     *
-     * Pop return value, restore `fp`, calculate new `sp` so that the arguments
-     * pushed to this function are popped and push result and return address to
-     * top of stack.
-     */
-    class Leave(val paramCount: Int) : OpCode() {
-        override fun toString() = "Leave $paramCount"
+    class JumpIfFalse(val sp: Int, val address: Int) : OpCode() {
+        override fun toString() = "jump-if-false frame[$sp] $address"
+        override fun relocate(baseAddress: Int) = JumpIfFalse(sp, baseAddress + address)
     }
 }

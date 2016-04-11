@@ -29,10 +29,10 @@ class BasicBlockTest {
     }
 
     @Test
-    fun frameSize() {
+    fun localVariableOffsets() {
         block += IR.LoadLocal(0, "square")
         block += IR.StoreLocal(1, "sq")
 
-        assertEquals(2, block.frameSize)
+        assertEquals(1, block.maxLocalVariableOffset)
     }
 }

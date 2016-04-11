@@ -28,6 +28,13 @@ class DataSegment {
         // We don't need to call ensureCapacity here because we can never read uninitialized values
         bindings[index] ?: error("uninitialized read at $index")
 
+    /**
+     * Returns the value bound to given variable.
+     */
+    operator fun get(base: Int, offset: Int): Value =
+        // We don't need to call ensureCapacity here because we can never read uninitialized values
+        bindings[base + offset] ?: error("uninitialized read at $base+$offset")
+
     private fun ensureCapacity(capacity: Int) {
         if (capacity > bindings.size) {
             val newSize = max(capacity, bindings.size * 2)

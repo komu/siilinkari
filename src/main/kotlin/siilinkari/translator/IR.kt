@@ -21,13 +21,10 @@ sealed class IR(val stackDelta: Int) {
     object ConcatString : IR(-1)
     object Pop : IR(-1)
     object Dup : IR(1)
-    class Call(args: Int) : IR(-args)
+    class Call(val argumentCount: Int) : IR(-argumentCount)
+    object RestoreFrame : IR(0)
     object Ret : IR(-1)
-    object Quit : IR(-1)
     object PushUnit : IR(1)
-
-    class Enter(val frameSize: Int) : IR(0)
-    class Leave(val paramCount: Int) : IR(0)
 
     class Push(val value: Value) : IR(1) {
         override fun toString() = "Push ${value.repr()}"

@@ -49,10 +49,10 @@ class BasicBlockGraph {
         return startStackDepths
     }
 
-    val frameSize: Int
-        get() = allBlocksInArbitraryOrder().map { it.frameSize }.max() ?: 0
+    fun localVariablesCount() =
+        allBlocksInArbitraryOrder().map { it.maxLocalVariableOffset + 1 }.max() ?: 0
 
-    fun BasicBlockGraph.allBlocks(): Collection<BasicBlock> {
+    fun allBlocks(): Collection<BasicBlock> {
         val blocks = allBlocksInArbitraryOrder()
 
         // move the ending block to be last
@@ -76,4 +76,7 @@ class BasicBlockGraph {
         gatherBlocks(start)
         return blocks
     }
+
+    override fun toString() =
+        allBlocks().toString()
 }

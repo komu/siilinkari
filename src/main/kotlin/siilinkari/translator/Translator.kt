@@ -7,6 +7,7 @@ import siilinkari.types.TypedExpression
 fun TypedExpression.translateToIR(): BasicBlockGraph {
     val translator = Translator()
     translator.run { emitCode() }
+    translator.basicBlocks.end += IR.Ret
     return translator.basicBlocks
 }
 
@@ -28,9 +29,10 @@ class Translator() {
             is TypedExpression.Binary ->
                 emitCode()
             is TypedExpression.Call -> {
-                args.asReversed().forEach { it.emitCode() }
+                args.forEach { it.emitCode() }
                 func.emitCode()
                 currentBlock += IR.Call(args.size)
+                currentBlock += IR.RestoreFrame
             }
             is TypedExpression.ExpressionList -> {
                 currentBlock += IR.PushUnit

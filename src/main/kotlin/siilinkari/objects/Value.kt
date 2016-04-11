@@ -22,7 +22,9 @@ sealed class Value {
     /**
      * Unit value.
      */
-    object Unit : Value()
+    object Unit : Value() {
+        override fun toString() = "Unit"
+    }
 
     /** Are value of this type immutable? (Can they be safely used in constant propagation?) */
     val immutable = true
