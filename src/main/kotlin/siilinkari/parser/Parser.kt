@@ -16,21 +16,27 @@ import java.util.*
  * @throws SyntaxErrorException if parsing fails
  */
 fun parseExpression(code: String): Expression =
-    parseComplete(code) { it.parseTopLevelExpression() }
+    parseComplete(Lexer(code)) { it.parseTopLevelExpression() }
 
 /**
  * Parses a function definition.
  */
 fun parseFunctionDefinition(code: String): FunctionDefinition =
-    parseComplete(code) { it.parseFunctionDefinition() }
+    parseComplete(Lexer(code)) { it.parseFunctionDefinition() }
+
+/**
+ * Parses a function definition.
+ */
+fun parseFunctionDefinitions(code: String, file: String): List<FunctionDefinition> =
+    parseComplete(Lexer(code, file)) { it.parseFunctionDefinitions() }
 
 /**
  * Executes parser on code and verifies that it consumes all input.
  *
  * @throws SyntaxErrorException if the parser fails or if it did not consume all input
  */
-private fun <T> parseComplete(code: String, callback: (Parser) -> T): T {
-    val parser = Parser(Lexer(code))
+private fun <T> parseComplete(lexer: Lexer, callback: (Parser) -> T): T {
+    val parser = Parser(lexer)
     val result = callback(parser)
     parser.expectEnd()
     return result
@@ -42,6 +48,15 @@ private fun <T> parseComplete(code: String, callback: (Parser) -> T): T {
 private class Parser(lexer: Lexer) {
 
     private val lexer = LookaheadLexer(lexer)
+
+    fun parseFunctionDefinitions(): List<FunctionDefinition> {
+        val result = ArrayList<FunctionDefinition>()
+
+        while (lexer.hasMore)
+            result += parseFunctionDefinition()
+
+        return result
+    }
 
     /**
      * ```

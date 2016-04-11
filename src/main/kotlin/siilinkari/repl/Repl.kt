@@ -29,6 +29,8 @@ fun main(args: Array<String>) {
         i - word.length
     }
 
+    evaluator.loadResource("prelude.sk")
+
     println("Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.")
 
     while (true) {

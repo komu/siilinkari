@@ -9,6 +9,7 @@ import siilinkari.objects.Value
 import siilinkari.optimizer.optimize
 import siilinkari.parser.parseExpression
 import siilinkari.parser.parseFunctionDefinition
+import siilinkari.parser.parseFunctionDefinitions
 import siilinkari.translator.FunctionTranslator
 import siilinkari.translator.IR
 import siilinkari.translator.translateToCode
@@ -51,6 +52,17 @@ class Evaluator {
             val segment = translate(parsed)
             return evaluateSegment(segment)
         }
+    }
+
+    /**
+     * Loads contents of given file.
+     */
+    fun loadResource(file: String) {
+        val source = javaClass.classLoader.getResource(file).openStream().use { it.reader().readText() }
+        val defs = parseFunctionDefinitions(source, file)
+
+        for (def in defs)
+            bindFunction(def)
     }
 
     /**
