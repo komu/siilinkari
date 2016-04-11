@@ -62,6 +62,14 @@ class EvaluatorTest {
     }
 
     @Test
+    fun ifExpressionValues() {
+        evaluator.bind("x", true.value)
+
+        assertEvaluation("if (x) 1 else 2", 1.value)
+        assertEvaluation("if (!x) 1 else 2", 2.value)
+    }
+
+    @Test
     fun binaryExpressions() {
         assertEvaluation("1 + 2", 3.value)
         assertEvaluation("1 - 2", (-1).value)
@@ -103,8 +111,9 @@ class EvaluatorTest {
 
     @Test
     fun not() {
-        assertEvaluation("!true", false.value)
-        assertEvaluation("!false", true.value)
+        evaluate("val x = true")
+        assertEvaluation("!x", false.value)
+        assertEvaluation("!!x", true.value)
     }
 
     @Test
@@ -189,6 +198,9 @@ class EvaluatorTest {
     }
 
     private fun assertEvaluation(code: String, expectedValue: Value) {
+        evaluator.optimize = true
+        assertEquals(expectedValue, evaluate(code))
+        evaluator.optimize = false
         assertEquals(expectedValue, evaluate(code))
     }
 
