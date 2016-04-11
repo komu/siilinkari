@@ -3,8 +3,8 @@ package siilinkari.repl
 import jline.console.ConsoleReader
 import siilinkari.lexer.SyntaxErrorException
 import siilinkari.lexer.UnexpectedEndOfInputException
-import siilinkari.objects.Value
 import siilinkari.runtime.registerRuntimeFunctions
+import siilinkari.types.Type
 import siilinkari.types.TypeCheckException
 import siilinkari.vm.Evaluator
 
@@ -50,9 +50,9 @@ fun main(args: Array<String>) {
             } else {
                 while (true) {
                     try {
-                        val result = evaluator.evaluate(line)
-                        if (result != Value.Unit)
-                            println(result.repr())
+                        val (value, type) = evaluator.evaluate(line)
+                        if (type != Type.Unit)
+                            println("$type = ${value.repr()}")
                         break
                     } catch (e: UnexpectedEndOfInputException) {
                         val newLine = console.readLine("... ") ?: break

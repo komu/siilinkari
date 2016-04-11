@@ -196,6 +196,6 @@ class EvaluatorTest {
         evaluator.evaluate("fun square(x: Int) = x * x")
     }
 
-    private fun evaluate(code: String) =
-        evaluator.evaluate(code)
+    private fun evaluate(code: String): Value =
+        evaluator.evaluate(code).value
 }

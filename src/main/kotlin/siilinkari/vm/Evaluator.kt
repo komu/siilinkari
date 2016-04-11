@@ -1,6 +1,5 @@
 package siilinkari.vm
 
-import siilinkari.ast.Expression
 import siilinkari.ast.FunctionDefinition
 import siilinkari.env.GlobalStaticEnvironment
 import siilinkari.lexer.LookaheadLexer
@@ -15,6 +14,7 @@ import siilinkari.translator.IR
 import siilinkari.translator.translateToCode
 import siilinkari.translator.translateToIR
 import siilinkari.types.Type
+import siilinkari.types.TypedExpression
 import siilinkari.types.type
 import siilinkari.types.typeCheck
 
@@ -42,16 +42,16 @@ class Evaluator {
      * Evaluates code which can either be a definition, statement or expression.
      * If the code represented an expression, returns its value. Otherwise [Value.Unit] is returned.
      */
-    fun evaluate(code: String): Value {
+    fun evaluate(code: String): EvaluationResult {
         if (LookaheadLexer(code).nextTokenIs(Keyword.Fun)) {
             val definition = parseFunctionDefinition(code)
             bindFunction(definition)
-            return Value.Unit
+            return EvaluationResult(Value.Unit, Type.Unit)
 
         } else {
-            val parsed = parseExpression(code)
-            val segment = translate(parsed)
-            return evaluateSegment(segment)
+            val exp = parseExpression(code).typeCheck(globalTypeEnvironment)
+            val segment = translate(exp)
+            return EvaluationResult(evaluateSegment(segment), exp.type)
         }
     }
 
@@ -76,7 +76,7 @@ class Evaluator {
      * Translates given code to opcodes and returns string representation of the opcodes.
      */
     fun dump(code: String): String =
-        translate(parseExpression(code)).toString()
+        translate(parseExpression(code).typeCheck(globalTypeEnvironment)).toString()
 
     /**
      * Compiles and binds a global function.
@@ -106,8 +106,8 @@ class Evaluator {
     /**
      * Translates code to opcodes.
      */
-    private fun translate(exp: Expression): CodeSegment {
-        val blocks = exp.typeCheck(globalTypeEnvironment).optimize().translateToIR()
+    private fun translate(exp: TypedExpression): CodeSegment {
+        val blocks = exp.optimize().translateToIR()
 
         blocks.optimize()
         blocks.end += IR.Quit
