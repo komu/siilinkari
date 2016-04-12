@@ -134,9 +134,11 @@ class Evaluator {
         state.sp = initialStackPointer
 
         evalLoop@while (true) {
-            val op = code[state.pc++]
+            val op = code[state.pc]
             if (trace)
-                println(op)
+                println("${state.pc.toString().padStart(4)}: ${op.toString().padEnd(25)} [sp=${state.sp}, fp=${state.fp}]")
+
+            state.pc++
             when (op) {
                 OpCode.Pop              -> state.popValue()
                 OpCode.Dup              -> state.dup()
