@@ -27,4 +27,12 @@ class BasicBlockTest {
         block.endWithBranch(BasicBlock(), BasicBlock())
         assertEquals(1, block.stackDelta)
     }
+
+    @Test
+    fun frameSize() {
+        block += IR.LoadLocal(0, "square")
+        block += IR.StoreLocal(1, "sq")
+
+        assertEquals(2, block.frameSize)
+    }
 }
