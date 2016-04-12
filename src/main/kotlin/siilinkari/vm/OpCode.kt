@@ -27,12 +27,7 @@ sealed class OpCode {
         override fun toString() = "Push ${value.repr()}"
     }
 
-    abstract class LocalFrameOpCode : OpCode() {
-        abstract val localFrameOffset: Int
-    }
-
-    class LoadLocal(val offset: Int, val name: String) : LocalFrameOpCode() {
-        override val localFrameOffset = offset
+    class LoadLocal(val offset: Int, val name: String) : OpCode() {
         override fun toString() = "LoadLocal $offset ; $name"
     }
 
@@ -44,8 +39,7 @@ sealed class OpCode {
         override fun toString() = "LoadArgument $offset ; $name"
     }
 
-    class StoreLocal(val offset: Int, val name: String) : LocalFrameOpCode() {
-        override val localFrameOffset = offset
+    class StoreLocal(val offset: Int, val name: String) : OpCode() {
         override fun toString() = "StoreLocal $offset ; $name"
     }
 

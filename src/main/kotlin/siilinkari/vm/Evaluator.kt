@@ -51,8 +51,8 @@ class Evaluator {
 
         } else {
             val exp = parseExpression(code).typeCheck(globalTypeEnvironment)
-            val segment = translate(exp)
-            return EvaluationResult(evaluateSegment(segment), exp.type)
+            val (segment, frameSize) = translate(exp)
+            return EvaluationResult(evaluateSegment(segment, frameSize), exp.type)
         }
     }
 
@@ -77,7 +77,7 @@ class Evaluator {
      * Translates given code to opcodes and returns string representation of the opcodes.
      */
     fun dump(code: String): String =
-        translate(parseExpression(code).typeCheck(globalTypeEnvironment)).toString()
+        translate(parseExpression(code).typeCheck(globalTypeEnvironment)).first.toString()
 
     /**
      * Compiles and binds a global function.
@@ -106,7 +106,7 @@ class Evaluator {
     /**
      * Translates code to opcodes.
      */
-    private fun translate(exp: TypedExpression): CodeSegment {
+    private fun translate(exp: TypedExpression): Pair<CodeSegment, Int> {
         val optExp = if (optimize) exp.optimize() else exp
         val blocks = optExp.translateToIR()
 
@@ -115,18 +115,18 @@ class Evaluator {
 
         blocks.end += IR.Quit
 
-        return blocks.translateToCode()
+        return Pair(blocks.translateToCode(), blocks.frameSize)
     }
 
     /**
      * Evaluates given code segment.
      */
-    private fun evaluateSegment(segment: CodeSegment): Value {
+    private fun evaluateSegment(segment: CodeSegment, frameSize: Int): Value {
         // Relocate code to be evaluated after the global code into a single segment.
         val codeBuilder = CodeSegment.Builder(globalCode)
         val startAddress = codeBuilder.addRelocated(segment)
         val code = codeBuilder.build()
-        val initialStackPointer = codeBuilder.frameSize
+        val initialStackPointer = frameSize
 
         val state = ThreadState()
         state.pc = startAddress

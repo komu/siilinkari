@@ -57,12 +57,6 @@ class CodeSegment private constructor(private val opCodes: List<OpCode>) {
         }
 
         /**
-         * Calculates the frame size needed by opcodes in this segment.
-         */
-        val frameSize: Int
-            get() = opCodes.filterIsInstance<OpCode.LocalFrameOpCode>().map { it.localFrameOffset + 1 }.max() ?: 0
-
-        /**
          * Builds the segment.
          */
         fun build(): CodeSegment {
