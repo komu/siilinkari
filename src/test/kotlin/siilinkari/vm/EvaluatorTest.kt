@@ -3,6 +3,8 @@ package siilinkari.vm
 import org.junit.Test
 import siilinkari.objects.Value
 import siilinkari.objects.value
+import siilinkari.runtime.fun1
+import siilinkari.types.Type
 import siilinkari.types.TypeCheckException
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -189,6 +191,13 @@ class EvaluatorTest {
         assertEvaluation("1 <= 2", true.value)
         assertEvaluation("1 > 2", false.value)
         assertEvaluation("1 >= 2", false.value)
+    }
+
+    @Test
+    fun nativeFunctionCalls() {
+        evaluator.bind("inc", fun1<Value.Integer>("inc", Type.Int, Type.Int) { it + 1.value }, mutable = false)
+
+        assertEvaluation("inc(4)", 5.value)
     }
 
     private fun assertTypeCheckFails(s: String) {
