@@ -69,7 +69,7 @@ private class Parser(lexer: Lexer) {
         val args = parseArgumentDefinitionList()
         val returnType = if (lexer.readNextIf(Punctuation.Colon)) parseType() else null
         lexer.expect(Punctuation.Equal)
-        val body = parseExpression()
+        val body = parseTopLevelExpression()
 
         return FunctionDefinition(name, args, returnType, body)
     }
