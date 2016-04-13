@@ -7,6 +7,7 @@ import siilinkari.runtime.registerRuntimeFunctions
 import siilinkari.types.Type
 import siilinkari.types.TypeCheckException
 import siilinkari.vm.Evaluator
+import kotlin.system.measureTimeMillis
 
 /**
  * Implementation of Read-Eval-Print loop.
@@ -33,6 +34,7 @@ fun main(args: Array<String>) {
 
     println("Welcome to Siilinkari! Enjoy your stay or type 'exit' to get out.")
 
+    var showElapsedTime = false
     while (true) {
         var line = console.readLine(">>> ")?.trim() ?: break
 
@@ -41,6 +43,11 @@ fun main(args: Array<String>) {
 
         if (line == ":trace") {
             evaluator.trace = !evaluator.trace;
+            println("trace ${if (evaluator.trace) "on" else "off"}")
+            continue
+        } else if (line == ":time") {
+            showElapsedTime = !showElapsedTime
+            println("time ${if (showElapsedTime) "on" else "off"}")
             continue
         }
 
@@ -50,9 +57,15 @@ fun main(args: Array<String>) {
             } else {
                 while (true) {
                     try {
-                        val (value, type) = evaluator.evaluate(line)
-                        if (type != Type.Unit)
-                            println("$type = ${value.repr()}")
+                        val elapsedTime = measureTimeMillis {
+                            val (value, type) = evaluator.evaluate(line)
+                            if (type != Type.Unit)
+                                println("$type = ${value.repr()}")
+                        }
+
+                        if (showElapsedTime) {
+                            println("time: ${elapsedTime}ms")
+                        }
                         break
                     } catch (e: UnexpectedEndOfInputException) {
                         val newLine = console.readLine("... ") ?: break
