@@ -43,11 +43,15 @@ fun main(args: Array<String>) {
 
         if (line == ":trace") {
             evaluator.trace = !evaluator.trace;
-            println("trace ${if (evaluator.trace) "on" else "off"}")
+            println("trace ${evaluator.trace.statusText}")
             continue
         } else if (line == ":time") {
             showElapsedTime = !showElapsedTime
-            println("time ${if (showElapsedTime) "on" else "off"}")
+            println("time ${showElapsedTime.statusText}")
+            continue
+        } else if (line == ":optimize") {
+            evaluator.optimize = !evaluator.optimize
+            println("optimize ${evaluator.optimize.statusText}")
             continue
         }
 
@@ -86,3 +90,6 @@ fun main(args: Array<String>) {
 
     println("Thank you for visiting Siilinkari, have a nice day!")
 }
+
+private val Boolean.statusText: String
+    get() = if (this) "on" else "off"
