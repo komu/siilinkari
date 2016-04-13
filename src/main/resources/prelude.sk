@@ -1,2 +1,10 @@
 fun square(x: Int) = x * x
 fun cube(x: Int) = x * x * x
+
+fun fib(i: Int): Int =
+    if (i == 0)
+        0
+    else if (i == 1)
+        1
+    else
+        fib(i-1) + fib(i-2)
