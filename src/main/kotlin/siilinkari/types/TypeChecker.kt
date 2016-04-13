@@ -53,7 +53,9 @@ fun Expression.typeCheck(env: StaticEnvironment): TypedExpression = when (this) 
     }
     is Expression.ExpressionList -> {
         val childEnv = env.newScope()
-        TypedExpression.ExpressionList(expressions.map { it.typeCheck(childEnv) })
+        val expressions = expressions.map { it.typeCheck(childEnv) }
+        val lastType = expressions.lastOrNull()?.type ?: Type.Unit
+        TypedExpression.ExpressionList(expressions, lastType)
     }
 }
 

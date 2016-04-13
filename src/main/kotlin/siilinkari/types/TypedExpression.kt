@@ -14,7 +14,6 @@ import siilinkari.objects.Value
  * to [TypedExpression.Binary.Plus], expressions `"foo" + "bar"` or `"foo" + 1` will be translated
  * to [TypedExpression.Binary.ConcatString].
  *
- * @see Stmt
  * @see Type
  */
 sealed class TypedExpression(val type: Type) {
@@ -87,7 +86,11 @@ sealed class TypedExpression(val type: Type) {
         override fun toString() = "[While $condition $body]"
     }
 
-    class ExpressionList(val expressions: List<TypedExpression>) : TypedExpression(Type.Unit) {
+    class ExpressionList(val expressions: List<TypedExpression>, type: Type) : TypedExpression(type) {
         override fun toString() = "[ExpressionList $expressions]"
+    }
+
+    companion object {
+        val Empty = ExpressionList(emptyList(), Type.Unit)
     }
 }

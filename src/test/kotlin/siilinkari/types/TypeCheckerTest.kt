@@ -75,6 +75,18 @@ class TypeCheckerTest {
     }
 
     @Test
+    fun typeOfEmptyExpressionListIsUnit() {
+        assertType(Type.Unit, "{}")
+    }
+
+    @Test
+    fun typeOfNonEmptyExpressionListIsTypeOfLast() {
+        assertType(Type.Int, "{ 1 }")
+        assertType(Type.String, "{ 1; \"\" }")
+        assertType(Type.Int, "{ 1; \"\"; 3 }")
+    }
+
+    @Test
     fun ifWithCompatibleTypesReturnsTheCommonType() {
         assertType(Type.Int, "if (true) 42 else 31")
         assertType(Type.String, "if (true) \"foo\" else \"bar\"")

@@ -26,7 +26,7 @@ private fun TypedExpression.eval(env: ConstantBindingEnv): TypedExpression = whe
     is While    -> eval(env)
     is ExpressionList   -> {
         val childEnv = env.child()
-        expressions.singleOrNull()?.eval(childEnv) ?: ExpressionList(expressions.map { it.eval(childEnv) })
+        expressions.singleOrNull()?.eval(childEnv) ?: ExpressionList(expressions.map { it.eval(childEnv) }, type)
     }
 }
 
@@ -36,7 +36,7 @@ private fun If.eval(env: ConstantBindingEnv): TypedExpression {
         if (optCondition.value.value)
             consequent.eval(env.child())
         else
-            alternative?.eval(env.child()) ?: ExpressionList(emptyList())
+            alternative?.eval(env.child()) ?: TypedExpression.Empty
     } else {
         If(optCondition, consequent.eval(env.child()), alternative?.eval(env.child()), type);
     }
@@ -45,7 +45,7 @@ private fun If.eval(env: ConstantBindingEnv): TypedExpression {
 private fun While.eval(env: ConstantBindingEnv): TypedExpression {
     val optCondition = condition.eval(env)
     if (optCondition is Lit && optCondition.value is Value.Bool && optCondition.value.value == false) {
-        return ExpressionList(emptyList())
+        return TypedExpression.Empty
     }
     return While(optCondition, body.eval(env.child()))
 }
