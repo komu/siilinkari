@@ -43,7 +43,11 @@ class ThreadState {
 
     override fun toString() = "  pc = $pc\n  fp = $fp\n  data = $stack"
 
-    inline fun <reified L : Value, reified R : Value> evalBinary(op: OpCode.Binary, f: (L, R) -> Value) {
+    inline fun <reified T : Value, reified L : Value, reified R : Value> evalBinary(op: OpCode.Binary<L, R, T>, f: (L, R) -> T) {
         this[op.target] = f(this[op.lhs] as L, this[op.rhs] as R)
+    }
+
+    inline fun <reified L : Value, reified R : Value> evalBinaryBool(op: OpCode.Binary<L, R, Value.Bool>, f: (L, R) -> Boolean) {
+        this[op.target] = Value.Bool(f(this[op.lhs] as L, this[op.rhs] as R))
     }
 }

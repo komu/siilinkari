@@ -139,24 +139,23 @@ class Evaluator {
 
             state.pc++
             when (op) {
-                Nop              -> {}
-                is Not           -> state[op.target] = !(state[op.source] as Value.Bool)
-                is Add           -> state.evalBinary<Value.Integer, Value.Integer>(op) { l, r -> l + r }
-                is Subtract      -> state.evalBinary<Value.Integer, Value.Integer>(op) { l, r -> l - r }
-                is Multiply      -> state.evalBinary<Value.Integer, Value.Integer>(op) { l, r -> l * r }
-                is Divide        -> state.evalBinary<Value.Integer, Value.Integer>(op) { l, r -> l / r }
-                is Equal         -> state.evalBinary<Value, Value>(op) { l, r -> Value.Bool(l == r) }
-                is LessThan      -> state.evalBinary<Value, Value>(op) { l, r -> Value.Bool(l.lessThan(r)) }
-                is LessThanOrEqual -> state.evalBinary<Value, Value>(op) { l, r -> Value.Bool(l == r || l.lessThan(r)) }
-                is ConcatString  -> state.evalBinary<Value.String, Value>(op) { l, r -> l + r }
-                is LoadConstant -> state[op.target] = op.value
-                is Jump          -> state.pc = op.address
-                is JumpIfFalse   -> if (!(state[op.sp] as Value.Bool).value) state.pc = op.address
-                is Copy -> state[op.target] = state[op.source]
-                is LoadGlobal    -> state[op.target] = globalData[op.sourceGlobal]
-                is StoreGlobal   -> globalData[op.targetGlobal] = state[op.source]
-                is Call          -> evalCall(op, state)
-                is RestoreFrame  -> state.fp -= op.sp
+                is Not              -> state[op.target] = !(state[op.source] as Value.Bool)
+                is Add              -> state.evalBinary(op) { l, r -> l + r }
+                is Subtract         -> state.evalBinary(op) { l, r -> l - r }
+                is Multiply         -> state.evalBinary(op) { l, r -> l * r }
+                is Divide           -> state.evalBinary(op) { l, r -> l / r }
+                is Equal            -> state.evalBinaryBool(op) { l, r -> l == r }
+                is LessThan         -> state.evalBinaryBool(op) { l, r -> l.lessThan(r) }
+                is LessThanOrEqual  -> state.evalBinaryBool(op) { l, r -> l == r || l.lessThan(r) }
+                is ConcatString     -> state.evalBinary(op) { l, r-> l + r }
+                is LoadConstant     -> state[op.target] = op.value
+                is Copy             -> state[op.target] = state[op.source]
+                is LoadGlobal       -> state[op.target] = globalData[op.sourceGlobal]
+                is StoreGlobal      -> globalData[op.targetGlobal] = state[op.source]
+                is Jump             -> state.pc = op.address
+                is JumpIfFalse      -> if (!(state[op.sp] as Value.Bool).value) state.pc = op.address
+                is Call             -> evalCall(op, state)
+                is RestoreFrame     -> state.fp -= op.sp
                 is Ret           -> {
                     val returnAddress = state[op.returnAddressPointer]
                     state[0] = state[op.valuePointer]
@@ -164,6 +163,7 @@ class Evaluator {
                         break@evalLoop
                     state.pc = (returnAddress as Value.Pointer.Code).value
                 }
+                Nop                 -> {}
                 else                    -> error("unknown opcode: $op")
             }
         }

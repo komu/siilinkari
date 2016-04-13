@@ -11,17 +11,18 @@ sealed class OpCode {
         override fun toString() = "frame[$target] = !frame[$source]"
     }
 
-    abstract class Binary(val name: String, val target: Int, val lhs: Int, val rhs: Int) : OpCode() {
+    @Suppress("unused") // type parameters are used for inference in Evaluator
+    abstract class Binary<L : Value, R : Value, T : Value>(val name: String, val target: Int, val lhs: Int, val rhs: Int) : OpCode() {
         override fun toString() = "frame[$target] = frame[$lhs] $name frame[$rhs]"
 
-        class Add(t: Int, l: Int, r: Int) : Binary("+", t, l, r)
-        class Subtract(t: Int, l: Int, r: Int) : Binary("-", t, l, r)
-        class Multiply(t: Int, l: Int, r: Int) : Binary("*", t, l, r)
-        class Divide(t: Int, l: Int, r: Int) : Binary("/", t, l, r)
-        class Equal(t: Int, l: Int, r: Int) : Binary("==", t, l, r)
-        class LessThan(t: Int, l: Int, r: Int) : Binary("<", t, l, r)
-        class LessThanOrEqual(t: Int, l: Int, r: Int) : Binary("<=", t, l, r)
-        class ConcatString(t: Int, l: Int, r: Int) : Binary("++", t, l, r)
+        class Add(t: Int, l: Int, r: Int) : Binary<Value.Integer, Value.Integer, Value.Integer>("+", t, l, r)
+        class Subtract(t: Int, l: Int, r: Int) : Binary<Value.Integer, Value.Integer, Value.Integer>("-", t, l, r)
+        class Multiply(t: Int, l: Int, r: Int) : Binary<Value.Integer, Value.Integer, Value.Integer>("*", t, l, r)
+        class Divide(t: Int, l: Int, r: Int) : Binary<Value.Integer, Value.Integer, Value.Integer>("/", t, l, r)
+        class Equal(t: Int, l: Int, r: Int) : Binary<Value, Value, Value.Bool>("==", t, l, r)
+        class LessThan(t: Int, l: Int, r: Int) : Binary<Value, Value, Value.Bool>("<", t, l, r)
+        class LessThanOrEqual(t: Int, l: Int, r: Int) : Binary<Value, Value, Value.Bool>("<=", t, l, r)
+        class ConcatString(t: Int, l: Int, r: Int) : Binary<Value.String, Value, Value.String>("++", t, l, r)
     }
 
     object Nop : OpCode()
