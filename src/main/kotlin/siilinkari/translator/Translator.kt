@@ -64,11 +64,12 @@ class Translator() {
 
                     currentBlock = trueBlock
                     consequent.emitCode()
-                    trueBlock.endWithJumpTo(afterBlock)
+                    currentBlock.endWithJumpTo(afterBlock)
 
                     currentBlock = falseBlock
                     alternative.emitCode()
-                    falseBlock.endWithJumpTo(afterBlock)
+
+                    currentBlock.endWithJumpTo(afterBlock)
 
                 } else {
                     val trueBlock = BasicBlock()
@@ -78,7 +79,7 @@ class Translator() {
                     currentBlock = trueBlock
                     consequent.emitCode()
                     currentBlock += IR.Pop
-                    trueBlock.endWithJumpTo(afterBlock)
+                    currentBlock.endWithJumpTo(afterBlock)
 
                     afterBlock += IR.PushUnit
                 }
@@ -94,12 +95,12 @@ class Translator() {
 
                 currentBlock = loopHead
                 condition.emitCode()
-                loopHead.endWithBranch(loopBody, afterLoop)
+                currentBlock.endWithBranch(loopBody, afterLoop)
 
                 currentBlock = loopBody
                 body.emitCode()
                 currentBlock += IR.Pop
-                loopBody.endWithJumpTo(loopHead)
+                currentBlock.endWithJumpTo(loopHead)
 
                 currentBlock = afterLoop
                 currentBlock += IR.PushUnit

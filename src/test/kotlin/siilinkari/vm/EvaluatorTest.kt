@@ -210,6 +210,28 @@ class EvaluatorTest {
         assertEvaluation("sub(7, 4)", 3.value)
     }
 
+    @Test
+    fun nestedIfs() {
+        assertEvaluation("""if (false) 1 else if (true) 2 else 3""", 2.value)
+    }
+
+    @Test
+    fun recursion() {
+        evaluate("""
+            fun fib(i: Int): Int =
+                if (i == 0)
+                    0
+                else if (i == 1)
+                    1
+                else
+                    fib(i-1) + fib(i-2)
+        """)
+
+        assertEvaluation("fib(2)", 1.value)
+        assertEvaluation("fib(10)", 55.value)
+        assertEvaluation("fib(20)", 6765.value)
+    }
+
     private fun assertTypeCheckFails(s: String) {
         assertFailsWith<TypeCheckException> {
             evaluate(s)
