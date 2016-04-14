@@ -77,7 +77,7 @@ private fun TypedExpression.Binary.eval(env: ConstantBindingEnv): TypedExpressio
                 is Binary.Plus      -> return Lit(optLhs.value + optRhs.value)
                 is Binary.Minus     -> return Lit(optLhs.value - optRhs.value)
                 is Binary.Multiply  -> return Lit(optLhs.value * optRhs.value)
-                is Binary.Divide    -> return Lit(optLhs.value / optRhs.value)
+                is Binary.Divide    -> if (optRhs.value.value != 0) return Lit(optLhs.value / optRhs.value)
             }
         }
     }
