@@ -85,7 +85,7 @@ sealed class Value {
         /**
          * Function whose implementation is byte-code.
          */
-        class Compound(name: kotlin.String, signature: Type.Function, val address: Int) : Function(name, signature)
+        class Compound(name: kotlin.String, signature: Type.Function, val address: Int, val codeSize: Int) : Function(name, signature)
 
         /**
          * Function implemented as native function.

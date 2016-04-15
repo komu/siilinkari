@@ -13,6 +13,7 @@ import siilinkari.translator.FunctionTranslator
 import siilinkari.translator.translateToCode
 import siilinkari.translator.translateToIR
 import siilinkari.types.Type
+import siilinkari.types.TypedExpression
 import siilinkari.types.type
 import siilinkari.types.typeCheck
 import siilinkari.vm.OpCode.*
@@ -75,8 +76,19 @@ class Evaluator {
     /**
      * Translates given code to opcodes and returns string representation of the opcodes.
      */
-    fun dump(code: String): String =
-        translate(code).first.toString()
+    fun dump(code: String): String {
+        val exp = parseAndTypeCheck(code)
+
+        if (exp is TypedExpression.Ref && exp.type is Type.Function) {
+            val value = globalData[exp.binding.index] as Value.Function
+            return when (value) {
+                is Value.Function.Compound -> globalCode.getRegion(value.address, value.codeSize).toString()
+                is Value.Function.Native   -> "native function $value"
+            }
+        } else {
+            return translate(exp).toString()
+        }
+    }
 
     /**
      * Compiles and binds a global function.
@@ -95,7 +107,7 @@ class Evaluator {
             if (binding == null)
                 binding = globalTypeEnvironment.bind(func.name, signature, mutable = false)
 
-            globalData[binding.index] = Value.Function.Compound(func.name, signature, address)
+            globalData[binding.index] = Value.Function.Compound(func.name, signature, address, code.size)
         } catch (e: Exception) {
             if (binding != null)
                 globalTypeEnvironment.unbind(func.name)
@@ -107,18 +119,26 @@ class Evaluator {
      * Translates code to opcodes.
      */
     private fun translate(code: String): Pair<CodeSegment, Type> {
-        var exp = parseExpression(code).typeCheck(globalTypeEnvironment)
+        val exp = parseAndTypeCheck(code)
+        return Pair(translate(exp), exp.type)
+    }
 
-        if (optimize)
-            exp = exp.optimize()
+    private fun translate(exp: TypedExpression): CodeSegment {
+        val optExp = if (optimize)
+            exp.optimize()
+        else
+            exp
 
-        val blocks = exp.translateToIR()
+        val blocks = optExp.translateToIR()
 
         if (optimize)
             blocks.optimize()
 
-        return Pair(blocks.translateToCode(0), exp.type)
+        return blocks.translateToCode(0)
     }
+
+    private fun parseAndTypeCheck(code: String) =
+        parseExpression(code).typeCheck(globalTypeEnvironment)
 
     /**
      * Evaluates given code segment.
