@@ -34,8 +34,8 @@ sealed class Value {
             get() = Type.Unit
     }
 
-    /** Are value of this type immutable? (Can they be safely used in constant propagation?) */
-    open val immutable = true
+    /** Are values of this type subject to constant propagation? */
+    open val mayInline = true
 
     open fun lessThan(r: Value): Boolean = error("< not supported for $this")
 
@@ -97,7 +97,7 @@ sealed class Value {
 
     sealed class Function(val name: kotlin.String, val signature: Type.Function) : Value() {
 
-        override val immutable = false
+        override val mayInline = false
 
         override fun toString() = "fun $name(${signature.argumentTypes.joinToString(", ")}): ${signature.returnType}"
 
@@ -120,7 +120,7 @@ sealed class Value {
     }
 
     class Array(val elements: kotlin.Array<Value>, val elementType: Type) : Value() {
-        override val immutable = false
+        override val mayInline = false
 
         override val type: Type
             get() = Type.Array(elementType)

@@ -18,7 +18,7 @@ private fun TypedExpression.eval(env: ConstantBindingEnv): TypedExpression = whe
     is Assign   -> Assign(variable, expression.eval(env))
     is Var      -> {
         val value = expression.eval(env)
-        if (value is Lit && value.value.immutable && !variable.mutable)
+        if (value is Lit && value.value.mayInline && !variable.mutable)
             env[variable] = value.value
         Var(variable, value)
     }
