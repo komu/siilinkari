@@ -159,10 +159,11 @@ private fun StaticEnvironment.bindType(name: String, type: Type, location: Sourc
  */
 val Value.type: Type
     get() = when (this) {
-        Value.Unit       -> Type.Unit
-        is Value.String  -> Type.String
-        is Value.Bool    -> Type.Boolean
-        is Value.Integer -> Type.Int
+        Value.Unit        -> Type.Unit
+        is Value.String   -> Type.String
+        is Value.Bool     -> Type.Boolean
+        is Value.Integer  -> Type.Int
         is Value.Function -> signature
-        is Value.Pointer -> error("no type associated with internal pointers")
+        is Value.Array    -> Type.Array(elementType)
+        is Value.Pointer  -> error("no type associated with internal pointers")
     }

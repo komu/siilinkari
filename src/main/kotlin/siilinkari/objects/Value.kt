@@ -1,6 +1,7 @@
 package siilinkari.objects
 
 import siilinkari.types.Type
+import java.util.*
 
 /**
  * Represents the valid runtime values in programs.
@@ -27,7 +28,7 @@ sealed class Value {
     }
 
     /** Are value of this type immutable? (Can they be safely used in constant propagation?) */
-    val immutable = true
+    open val immutable = true
 
     open fun lessThan(r: Value): Boolean = error("< not supported for $this")
 
@@ -80,6 +81,8 @@ sealed class Value {
 
     sealed class Function(val name: kotlin.String, val signature: Type.Function) : Value() {
 
+        override val immutable = false
+
         override fun toString() = "fun $name(${signature.argumentTypes.joinToString(", ")}): ${signature.returnType}"
 
         /**
@@ -95,6 +98,14 @@ sealed class Value {
             val argumentCount: Int
                 get() = signature.argumentTypes.size
         }
+    }
+
+    class Array(val elements: kotlin.Array<Value>, val elementType: Type) : Value() {
+        override val immutable = false
+
+        override fun equals(other: Any?) = other is Array && elements == other.elements
+        override fun hashCode() = elements.hashCode()
+        override fun toString() = Arrays.toString(elements)
     }
 
     sealed class Pointer(val value: Int) : Value() {

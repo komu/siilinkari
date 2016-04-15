@@ -18,4 +18,10 @@ class TypeTest {
         assertEquals("(Int) -> Boolean", Type.Function(listOf(Type.Int), Type.Boolean).toString())
         assertEquals("(String, Boolean) -> Int", Type.Function(listOf(Type.String,Type.Boolean), Type.Int).toString())
     }
+
+    @Test
+    fun arrayTypeToString() {
+        assertEquals("Array<String>", Type.Array(Type.String).toString())
+        assertEquals("Array<Array<String>>", Type.Array(Type.Array(Type.String)).toString())
+    }
 }

@@ -19,4 +19,10 @@ sealed class Type {
         override fun equals(other: Any?) = other is Function && argumentTypes == other.argumentTypes && returnType == other.returnType
         override fun hashCode() = hash(argumentTypes, returnType)
     }
+
+    class Array(val elementType: Type) : Type() {
+        override fun toString() = "Array<$elementType>"
+        override fun equals(other: Any?) = other is Array && elementType == other.elementType
+        override fun hashCode() = elementType.hashCode()
+    }
 }
