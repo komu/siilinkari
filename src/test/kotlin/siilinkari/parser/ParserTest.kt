@@ -68,12 +68,12 @@ class ParserTest {
     fun binaryOperators() {
         assertParseExpression("1 + 2", "[Plus [Lit 1] [Lit 2]]")
         assertParseExpression("1 - 2", "[Minus [Lit 1] [Lit 2]]")
-        assertParseExpression("1 == 2", "[Equals [Lit 1] [Lit 2]]")
-        assertParseExpression("1 != 2", "[NotEquals [Lit 1] [Lit 2]]")
-        assertParseExpression("1 < 2", "[LessThan [Lit 1] [Lit 2]]")
-        assertParseExpression("1 > 2", "[GreaterThan [Lit 1] [Lit 2]]")
-        assertParseExpression("1 <= 2", "[LessThanOrEqual [Lit 1] [Lit 2]]")
-        assertParseExpression("1 >= 2", "[GreaterThanOrEqual [Lit 1] [Lit 2]]")
+        assertParseExpression("1 == 2", "[== [Lit 1] [Lit 2]]")
+        assertParseExpression("1 != 2", "[!= [Lit 1] [Lit 2]]")
+        assertParseExpression("1 < 2", "[< [Lit 1] [Lit 2]]")
+        assertParseExpression("1 > 2", "[> [Lit 1] [Lit 2]]")
+        assertParseExpression("1 <= 2", "[<= [Lit 1] [Lit 2]]")
+        assertParseExpression("1 >= 2", "[>= [Lit 1] [Lit 2]]")
         assertParseExpression("true && false", "[And [Lit true] [Lit false]]")
         assertParseExpression("true || false", "[Or [Lit true] [Lit false]]")
     }
@@ -85,13 +85,13 @@ class ParserTest {
 
     @Test
     fun operatorPrecedence() {
-        assertParseExpression("a + b == c + d", "[Equals [Plus [Ref a] [Ref b]] [Plus [Ref c] [Ref d]]]")
-        assertParseExpression("a + (b == c) + d", "[Plus [Plus [Ref a] [Equals [Ref b] [Ref c]]] [Ref d]]")
+        assertParseExpression("a + b == c + d", "[== [Plus [Ref a] [Ref b]] [Plus [Ref c] [Ref d]]]")
+        assertParseExpression("a + (b == c) + d", "[Plus [Plus [Ref a] [== [Ref b] [Ref c]]] [Ref d]]")
         assertParseExpression("!x + y", "[Plus [Not [Ref x]] [Ref y]]")
         assertParseExpression("!(x + y)", "[Not [Plus [Ref x] [Ref y]]]")
         assertParseExpression("a + b * c + d", "[Plus [Plus [Ref a] [Multiply [Ref b] [Ref c]]] [Ref d]]")
-        assertParseExpression("a == b < c", "[Equals [Ref a] [LessThan [Ref b] [Ref c]]]")
-        assertParseExpression("a == b || c == d && e == f", "[Or [Equals [Ref a] [Ref b]] [And [Equals [Ref c] [Ref d]] [Equals [Ref e] [Ref f]]]]")
+        assertParseExpression("a == b < c", "[== [Ref a] [< [Ref b] [Ref c]]]")
+        assertParseExpression("a == b || c == d && e == f", "[Or [== [Ref a] [Ref b]] [And [== [Ref c] [Ref d]] [== [Ref e] [Ref f]]]]")
     }
 
     @Test
