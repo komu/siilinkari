@@ -99,12 +99,6 @@ sealed class Value {
 
     sealed class Pointer(val value: Int) : Value() {
 
-        class Data(offset: Int) : Pointer(offset) {
-            override fun equals(other: Any?) = other is Data && value == other.value
-            override fun hashCode() = value
-            override fun toString() = "Pointer.Data($value)"
-        }
-
         class Code(offset: Int) : Pointer(offset) {
             override fun equals(other: Any?) = other is Code && value == other.value
             override fun hashCode() = value
