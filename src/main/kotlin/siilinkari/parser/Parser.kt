@@ -84,14 +84,14 @@ private class Parser(lexer: Lexer) {
         Keyword.Val     -> parseVariableDefinition()
         LeftBrace       -> parseExpressionList()
         is Identifier   -> {
-            val exp = parseExpression();
+            val exp = parseExpression1();
             if (exp is Expression.Ref && lexer.nextTokenIs(Punctuation.Equal))
                 parseAssignTo(exp.name)
             else
                 exp
         }
         else ->
-            parseExpression()
+            parseExpression1()
     }
 
     /**
@@ -102,10 +102,10 @@ private class Parser(lexer: Lexer) {
      * levels.
      *
      * ```
-     * expression ::= expression2 (("==" | "!=") expression2)*
+     * expression1 ::= expression2 (("==" | "!=") expression2)*
      * ```
      */
-    fun parseExpression(): Expression {
+    fun parseExpression1(): Expression {
         var exp = parseExpression2()
 
         while (lexer.hasMore) {
@@ -231,7 +231,7 @@ private class Parser(lexer: Lexer) {
 
     private fun parseAssignTo(variable: String): Expression {
         val location = lexer.expect(Punctuation.Equal)
-        val rhs = parseExpression()
+        val rhs = parseTopLevelExpression()
 
         return Expression.Assign(variable, rhs, location)
     }
@@ -242,14 +242,14 @@ private class Parser(lexer: Lexer) {
 
         val variable = parseName().first
         lexer.expect(Punctuation.Equal)
-        val expression = parseExpression()
+        val expression = parseTopLevelExpression()
 
         return Expression.Var(variable, expression, mutable, location)
     }
 
     private fun parseIf(): Expression {
         val location = lexer.expect(Keyword.If)
-        val condition = inParens { parseExpression() }
+        val condition = inParens { parseTopLevelExpression() }
         val consequent = parseTopLevelExpression()
         val alternative = if (lexer.readNextIf(Keyword.Else)) parseTopLevelExpression() else null
 
@@ -258,7 +258,7 @@ private class Parser(lexer: Lexer) {
 
     private fun parseWhile(): Expression {
         val location = lexer.expect(Keyword.While)
-        val condition = inParens { parseExpression() }
+        val condition = inParens { parseTopLevelExpression() }
         val body = parseTopLevelExpression()
 
         return Expression.While(condition, body, location)
@@ -300,7 +300,7 @@ private class Parser(lexer: Lexer) {
             else {
                 val args = ArrayList<Expression>()
                 do {
-                    args += parseExpression()
+                    args += parseTopLevelExpression()
                 } while (lexer.readNextIf(Token.Punctuation.Comma))
                 args
             }
