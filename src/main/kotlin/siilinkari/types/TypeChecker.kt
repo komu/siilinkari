@@ -104,8 +104,10 @@ private fun Expression.Binary.typeCheck(env: StaticEnvironment): TypedExpression
     }
     is Expression.Binary.Relational -> {
         val (l, r) = typeCheckMatching(env)
-        if (l.type == Type.Unit || l.type is Type.Function)
-            throw TypeCheckException("can't compare values of type ${l.type}", location)
+
+        if (!l.type.supports(op))
+            throw TypeCheckException("operator $op is not supported for type ${l.type}", location)
+
         TypedExpression.Binary.Relational(op, l, r)
     }
 }
