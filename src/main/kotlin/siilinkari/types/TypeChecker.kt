@@ -153,17 +153,3 @@ private fun StaticEnvironment.bindType(name: String, type: Type, location: Sourc
         throw TypeCheckException("variable already bound '$name'", location)
     }
 }
-
-/**
- * Returns the [Type] associated with a literal [Value].
- */
-val Value.type: Type
-    get() = when (this) {
-        Value.Unit        -> Type.Unit
-        is Value.String   -> Type.String
-        is Value.Bool     -> Type.Boolean
-        is Value.Integer  -> Type.Int
-        is Value.Function -> signature
-        is Value.Array    -> Type.Array(elementType)
-        is Value.Pointer  -> error("no type associated with internal pointers")
-    }

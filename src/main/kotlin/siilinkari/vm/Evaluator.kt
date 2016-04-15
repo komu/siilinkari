@@ -14,7 +14,6 @@ import siilinkari.translator.translateToCode
 import siilinkari.translator.translateToIR
 import siilinkari.types.Type
 import siilinkari.types.TypedExpression
-import siilinkari.types.type
 import siilinkari.types.typeCheck
 import siilinkari.vm.OpCode.*
 import siilinkari.vm.OpCode.Binary.*

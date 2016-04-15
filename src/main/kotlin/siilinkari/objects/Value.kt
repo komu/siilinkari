@@ -21,10 +21,17 @@ sealed class Value {
     open fun repr(): kotlin.String = toString()
 
     /**
+     * Returns the [Type] associated with this value.
+     */
+    abstract val type: Type
+
+    /**
      * Unit value.
      */
     object Unit : Value() {
         override fun toString() = "Unit"
+        override val type: Type
+            get() = Type.Unit
     }
 
     /** Are value of this type immutable? (Can they be safely used in constant propagation?) */
@@ -42,6 +49,9 @@ sealed class Value {
         override fun repr() = '"' + value.replace("\"", "\\\"") + '"'
         override fun lessThan(r: Value) = value < (r as String).value
 
+        override val type: Type
+            get() = Type.String
+
         operator fun plus(rhs: Value): String =
             String(value + rhs.toString())
     }
@@ -52,6 +62,9 @@ sealed class Value {
     sealed class Bool(val value: Boolean) : Value() {
         object True : Bool(true)
         object False : Bool(false)
+
+        override val type: Type
+            get() = Type.Boolean
 
         companion object {
             operator fun invoke(value: Boolean): Bool = if (value) True else False
@@ -73,6 +86,9 @@ sealed class Value {
         override fun toString() = value.toString()
         override fun lessThan(r: Value) = value < (r as Integer).value
 
+        override val type: Type
+            get() = Type.Int
+
         operator fun plus(other: Integer) = Integer(value + other.value)
         operator fun minus(other: Integer) = Integer(value - other.value)
         operator fun times(other: Integer) = Integer(value * other.value)
@@ -84,6 +100,9 @@ sealed class Value {
         override val immutable = false
 
         override fun toString() = "fun $name(${signature.argumentTypes.joinToString(", ")}): ${signature.returnType}"
+
+        override val type: Type
+            get() = signature
 
         /**
          * Function whose implementation is byte-code.
@@ -103,12 +122,18 @@ sealed class Value {
     class Array(val elements: kotlin.Array<Value>, val elementType: Type) : Value() {
         override val immutable = false
 
+        override val type: Type
+            get() = Type.Array(elementType)
+
         override fun equals(other: Any?) = other is Array && elements == other.elements
         override fun hashCode() = elements.hashCode()
         override fun toString() = Arrays.toString(elements)
     }
 
     sealed class Pointer(val value: Int) : Value() {
+
+        override val type: Type
+            get() = error("pointers are internal objects that have no visible type")
 
         class Code(offset: Int) : Pointer(offset) {
             override fun equals(other: Any?) = other is Code && value == other.value
