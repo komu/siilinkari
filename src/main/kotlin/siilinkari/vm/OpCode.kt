@@ -8,12 +8,12 @@ sealed class OpCode {
     open fun relocate(baseAddress: Int) = this
 
     class Not(val target: Int, val source: Int) : OpCode() {
-        override fun toString() = "frame[$target] = !frame[$source]"
+        override fun toString() = "stack[fp+$target] = !stack[fp+$source]"
     }
 
     @Suppress("unused") // type parameters are used for inference in Evaluator
     abstract class Binary<L : Value, R : Value, T : Value>(val name: String, val target: Int, val lhs: Int, val rhs: Int) : OpCode() {
-        override fun toString() = "frame[$target] = frame[$lhs] $name frame[$rhs]"
+        override fun toString() = "stack[fp+$target] = stack[fp+$lhs] $name stack[fp+$rhs]"
 
         class Add(t: Int, l: Int, r: Int) : Binary<Value.Integer, Value.Integer, Value.Integer>("+", t, l, r)
         class Subtract(t: Int, l: Int, r: Int) : Binary<Value.Integer, Value.Integer, Value.Integer>("-", t, l, r)
@@ -28,31 +28,31 @@ sealed class OpCode {
     object Nop : OpCode()
 
     class Call(val offset: Int, val argumentCount: Int) : OpCode() {
-        override fun toString() = "call frame[$offset], $argumentCount"
+        override fun toString() = "call stack[fp+$offset], $argumentCount"
     }
 
     class RestoreFrame(val sp: Int) : OpCode() {
-        override fun toString() = "restore-frame $sp"
+        override fun toString() = "fp = fp - $sp"
     }
 
     class Ret(val valuePointer: Int, val returnAddressPointer: Int) : OpCode() {
-        override fun toString() = "ret value=frame[$valuePointer], address=frame[$returnAddressPointer]"
+        override fun toString() = "ret value=stack[fp+$valuePointer], address=stack[fp+$returnAddressPointer]"
     }
 
     class Copy(val target: Int, val source: Int, val description: String) : OpCode() {
-        override fun toString() = "frame[$target] = frame[$source] ; $description"
+        override fun toString() = "stack[fp+$target] = stack[fp+$source] ; $description"
     }
 
     class LoadConstant(val target: Int, val value: Value) : OpCode() {
-        override fun toString() = "frame[$target] = Constant(${value.repr()})"
+        override fun toString() = "stack[fp+$target] = ${value.repr()}"
     }
 
     class LoadGlobal(val target: Int, val sourceGlobal: Int, val name: String) : OpCode() {
-        override fun toString() = "frame[$target] = global[$sourceGlobal] ; $name"
+        override fun toString() = "stack[fp+$target] = heap[$sourceGlobal] ; $name"
     }
 
     class StoreGlobal(val targetGlobal: Int, val source: Int, val name: String) : OpCode() {
-        override fun toString() = "global[$targetGlobal] = frame[$source] ; $name"
+        override fun toString() = "heap[$targetGlobal] = stack[fp+$source] ; $name"
     }
 
     class Jump(val address: Int) : OpCode() {
@@ -61,7 +61,7 @@ sealed class OpCode {
     }
 
     class JumpIfFalse(val sp: Int, val address: Int) : OpCode() {
-        override fun toString() = "jump-if-false frame[$sp] $address"
+        override fun toString() = "jump-if-false stack[fp+$sp] $address"
         override fun relocate(baseAddress: Int) = JumpIfFalse(sp, baseAddress + address)
     }
 }

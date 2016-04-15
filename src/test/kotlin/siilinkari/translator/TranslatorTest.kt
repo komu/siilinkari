@@ -19,22 +19,22 @@ class TranslatorTest {
             }
             """,
             """
-            0 frame[2] = Constant(5)
-            1 frame[1] = frame[2] ; store local x
+            0 stack[fp+2] = 5
+            1 stack[fp+1] = stack[fp+2] ; store local x
             2 jump 3
-            3 frame[2] = frame[1] ; load local x
-            4 frame[3] = Constant(0)
-            5 frame[2] = frame[2] == frame[3]
-            6 frame[2] = !frame[2]
-            7 jump-if-false frame[2] 14
+            3 stack[fp+2] = stack[fp+1] ; load local x
+            4 stack[fp+3] = 0
+            5 stack[fp+2] = stack[fp+2] == stack[fp+3]
+            6 stack[fp+2] = !stack[fp+2]
+            7 jump-if-false stack[fp+2] 14
             8 jump 9
-            9 frame[2] = frame[1] ; load local x
-            10 frame[3] = Constant(1)
-            11 frame[2] = frame[2] - frame[3]
-            12 frame[1] = frame[2] ; store local x
+            9 stack[fp+2] = stack[fp+1] ; load local x
+            10 stack[fp+3] = 1
+            11 stack[fp+2] = stack[fp+2] - stack[fp+3]
+            12 stack[fp+1] = stack[fp+2] ; store local x
             13 jump 3
-            14 frame[2] = Constant(Unit)
-            15 ret value=frame[2], address=frame[0]
+            14 stack[fp+2] = Unit
+            15 ret value=stack[fp+2], address=stack[fp+0]
             """)
     }
 
@@ -48,24 +48,24 @@ class TranslatorTest {
             }
             """,
             """
-            0 frame[4] = Constant(4)
-            1 frame[1] = frame[4] ; store local x
-            2 frame[4] = Constant("")
-            3 frame[2] = frame[4] ; store local s
-            4 frame[4] = frame[1] ; load local x
-            5 frame[5] = Constant(4)
-            6 frame[4] = frame[4] == frame[5]
-            7 jump-if-false frame[4] 16
+            0 stack[fp+4] = 4
+            1 stack[fp+1] = stack[fp+4] ; store local x
+            2 stack[fp+4] = ""
+            3 stack[fp+2] = stack[fp+4] ; store local s
+            4 stack[fp+4] = stack[fp+1] ; load local x
+            5 stack[fp+5] = 4
+            6 stack[fp+4] = stack[fp+4] == stack[fp+5]
+            7 jump-if-false stack[fp+4] 16
             8 jump 9
-            9 frame[4] = Constant("It")
-            10 frame[5] = frame[4] ; dup
-            11 frame[3] = frame[5] ; store local t
-            12 frame[5] = Constant(" worked!")
-            13 frame[4] = frame[4] ++ frame[5]
-            14 frame[2] = frame[4] ; store local s
+            9 stack[fp+4] = "It"
+            10 stack[fp+5] = stack[fp+4] ; dup
+            11 stack[fp+3] = stack[fp+5] ; store local t
+            12 stack[fp+5] = " worked!"
+            13 stack[fp+4] = stack[fp+4] ++ stack[fp+5]
+            14 stack[fp+2] = stack[fp+4] ; store local s
             15 jump 16
-            16 frame[4] = Constant(Unit)
-            17 ret value=frame[4], address=frame[0]
+            16 stack[fp+4] = Unit
+            17 ret value=stack[fp+4], address=stack[fp+0]
             """)
     }
 
