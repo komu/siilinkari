@@ -53,6 +53,12 @@ sealed class Expression(val location: SourceLocation) {
         /** lhs / rhs */
         class Divide(lhs: Expression, rhs: Expression, location: SourceLocation) : Binary(lhs, rhs, location)
 
+        /** lhs && rhs */
+        class And(lhs: Expression, rhs: Expression, location: SourceLocation) : Binary(lhs, rhs, location)
+
+        /** lhs || rhs */
+        class Or(lhs: Expression, rhs: Expression, location: SourceLocation) : Binary(lhs, rhs, location)
+
         /** =, !=, <, >, <=, >= */
         class Relational(val op: RelationalOp, lhs: Expression, rhs: Expression, location: SourceLocation) : Binary(lhs, rhs, location) {
             override fun toString() = "[$op $lhs $rhs]"

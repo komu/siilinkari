@@ -75,6 +75,11 @@ private class Parser(lexer: Lexer) {
     }
 
     /**
+     * Parses an expression.
+     *
+     * Expression parsers are separated to different levels to handle precedence
+     * of operators correctly. The lower levels bind more tightly that the higher
+     * levels.
      * ```
      * topLevelExpr ::= | var | '{' exps '}' | ident "=" expression | expression
      * ```
@@ -95,26 +100,18 @@ private class Parser(lexer: Lexer) {
     }
 
     /**
-     * Parses an expression.
-     *
-     * Expression parsers are separated to different levels to handle precedence
-     * of operators correctly. The lower levels bind more tightly that the higher
-     * levels.
-     *
      * ```
-     * expression1 ::= expression2 (("==" | "!=") expression2)*
+     * expression1 ::= expression2 (("||") expression2)*
      * ```
      */
-    fun parseExpression1(): Expression {
+    private fun parseExpression1(): Expression {
         var exp = parseExpression2()
 
         while (lexer.hasMore) {
             val location = lexer.nextTokenLocation()
             when {
-                lexer.readNextIf(Operator.EqualEqual) ->
-                    exp = Binary.Relational(RelationalOp.Equals, exp, parseExpression2(), location)
-                lexer.readNextIf(Operator.NotEqual) ->
-                    exp = Binary.Relational(RelationalOp.NotEquals, exp, parseExpression2(), location)
+                lexer.readNextIf(Operator.Or) ->
+                    exp = Binary.Or(exp, parseExpression2(), location)
                 else ->
                     return exp
             }
@@ -125,7 +122,7 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * expression2 ::= expression3 (("<" | ">" | "<=" | ">=") expression3)*
+     * expression2 ::= expression3 (("&&") expression2)3
      * ```
      */
     private fun parseExpression2(): Expression {
@@ -134,14 +131,8 @@ private class Parser(lexer: Lexer) {
         while (lexer.hasMore) {
             val location = lexer.nextTokenLocation()
             when {
-                lexer.readNextIf(Operator.LessThan) ->
-                    exp = Binary.Relational(RelationalOp.LessThan, exp, parseExpression3(), location)
-                lexer.readNextIf(Operator.LessThanOrEqual) ->
-                    exp = Binary.Relational(RelationalOp.LessThanOrEqual, exp, parseExpression3(), location)
-                lexer.readNextIf(Operator.GreaterThan) ->
-                    exp = Binary.Relational(RelationalOp.GreaterThan, exp, parseExpression3(), location)
-                lexer.readNextIf(Operator.GreaterThanOrEqual) ->
-                    exp = Binary.Relational(RelationalOp.GreaterThanOrEqual, exp, parseExpression3(), location)
+                lexer.readNextIf(Operator.And) ->
+                    exp = Binary.And(exp, parseExpression3(), location)
                 else ->
                     return exp
             }
@@ -152,19 +143,19 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * expression3 ::= expression4 (("+" | "-") expression4)*
+     * expression3 ::= expression4 (("==" | "!=") expression4)*
      * ```
      */
-    private fun parseExpression3(): Expression {
+    fun parseExpression3(): Expression {
         var exp = parseExpression4()
 
         while (lexer.hasMore) {
             val location = lexer.nextTokenLocation()
             when {
-                lexer.readNextIf(Operator.Plus) ->
-                    exp = Binary.Plus(exp, parseExpression4(), location)
-                lexer.readNextIf(Operator.Minus) ->
-                    exp = Binary.Minus(exp, parseExpression4(), location)
+                lexer.readNextIf(Operator.EqualEqual) ->
+                    exp = Binary.Relational(RelationalOp.Equals, exp, parseExpression4(), location)
+                lexer.readNextIf(Operator.NotEqual) ->
+                    exp = Binary.Relational(RelationalOp.NotEquals, exp, parseExpression4(), location)
                 else ->
                     return exp
             }
@@ -175,7 +166,7 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * expression4 ::= expression5 (("*" | "/") expression5)*
+     * expression4 ::= expression5 (("<" | ">" | "<=" | ">=") expression5)*
      * ```
      */
     private fun parseExpression4(): Expression {
@@ -184,10 +175,14 @@ private class Parser(lexer: Lexer) {
         while (lexer.hasMore) {
             val location = lexer.nextTokenLocation()
             when {
-                lexer.readNextIf(Operator.Multiply) ->
-                    exp = Binary.Multiply(exp, parseExpression5(), location)
-                lexer.readNextIf(Operator.Divide) ->
-                    exp = Binary.Divide(exp, parseExpression5(), location)
+                lexer.readNextIf(Operator.LessThan) ->
+                    exp = Binary.Relational(RelationalOp.LessThan, exp, parseExpression5(), location)
+                lexer.readNextIf(Operator.LessThanOrEqual) ->
+                    exp = Binary.Relational(RelationalOp.LessThanOrEqual, exp, parseExpression5(), location)
+                lexer.readNextIf(Operator.GreaterThan) ->
+                    exp = Binary.Relational(RelationalOp.GreaterThan, exp, parseExpression5(), location)
+                lexer.readNextIf(Operator.GreaterThanOrEqual) ->
+                    exp = Binary.Relational(RelationalOp.GreaterThanOrEqual, exp, parseExpression5(), location)
                 else ->
                     return exp
             }
@@ -198,11 +193,57 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * expression5 ::= expression6 [ '(' args ')']
+     * expression5 ::= expression6 (("+" | "-") expression6)*
      * ```
      */
     private fun parseExpression5(): Expression {
-        val exp = parseExpression6()
+        var exp = parseExpression6()
+
+        while (lexer.hasMore) {
+            val location = lexer.nextTokenLocation()
+            when {
+                lexer.readNextIf(Operator.Plus) ->
+                    exp = Binary.Plus(exp, parseExpression6(), location)
+                lexer.readNextIf(Operator.Minus) ->
+                    exp = Binary.Minus(exp, parseExpression6(), location)
+                else ->
+                    return exp
+            }
+        }
+
+        return exp
+    }
+
+    /**
+     * ```
+     * expression6 ::= expression7 (("*" | "/") expression7)*
+     * ```
+     */
+    private fun parseExpression6(): Expression {
+        var exp = parseExpression7()
+
+        while (lexer.hasMore) {
+            val location = lexer.nextTokenLocation()
+            when {
+                lexer.readNextIf(Operator.Multiply) ->
+                    exp = Binary.Multiply(exp, parseExpression7(), location)
+                lexer.readNextIf(Operator.Divide) ->
+                    exp = Binary.Divide(exp, parseExpression7(), location)
+                else ->
+                    return exp
+            }
+        }
+
+        return exp
+    }
+
+    /**
+     * ```
+     * expression7 ::= expression8 [ '(' args ')']
+     * ```
+     */
+    private fun parseExpression7(): Expression {
+        val exp = parseExpression8()
 
         return if (lexer.nextTokenIs(Punctuation.LeftParen))
             Expression.Call(exp, parseArgumentList())
@@ -212,10 +253,10 @@ private class Parser(lexer: Lexer) {
 
     /**
      * ```
-     * expression5 ::= identifier | literal | not | "(" expression ")" | if | while
+     * expression8 ::= identifier | literal | not | "(" expression ")" | if | while
      * ```
      */
-    private fun parseExpression6(): Expression {
+    private fun parseExpression8(): Expression {
         val (token, location) = lexer.peekToken()
 
         return when (token) {
@@ -282,7 +323,7 @@ private class Parser(lexer: Lexer) {
 
     private fun parseNot(): Expression {
         val location = lexer.expect(Operator.Not)
-        val exp = parseExpression5()
+        val exp = parseExpression7()
 
         return Expression.Not(exp, location)
     }

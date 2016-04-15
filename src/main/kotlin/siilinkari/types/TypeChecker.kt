@@ -92,6 +92,16 @@ private fun Expression.Binary.typeCheck(env: StaticEnvironment): TypedExpression
         val typedRhs = rhs.typeCheckExpected(Type.Int, env)
         TypedExpression.Binary.Divide(typedLhs, typedRhs, Type.Int)
     }
+    is Expression.Binary.And -> {
+        val typedLhs = lhs.typeCheckExpected(Type.Boolean, env)
+        val typedRhs = rhs.typeCheckExpected(Type.Boolean, env)
+        TypedExpression.If(typedLhs, typedRhs, TypedExpression.Lit(Value.Bool.False), Type.Boolean)
+    }
+    is Expression.Binary.Or -> {
+        val typedLhs = lhs.typeCheckExpected(Type.Boolean, env)
+        val typedRhs = rhs.typeCheckExpected(Type.Boolean, env)
+        TypedExpression.If(typedLhs, TypedExpression.Lit(Value.Bool.True), typedRhs, Type.Boolean)
+    }
     is Expression.Binary.Relational -> {
         val (l, r) = typeCheckMatching(env)
         if (l.type == Type.Unit || l.type is Type.Function)

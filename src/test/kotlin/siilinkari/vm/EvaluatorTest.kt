@@ -168,6 +168,19 @@ class EvaluatorTest {
     }
 
     @Test
+    fun logicalOperators() {
+        assertEvaluation("false || false", false.value)
+        assertEvaluation("false || true", true.value)
+        assertEvaluation("true || false", true.value)
+        assertEvaluation("true || true", true.value)
+
+        assertEvaluation("false && false", false.value)
+        assertEvaluation("false && true", false.value)
+        assertEvaluation("true && false", false.value)
+        assertEvaluation("true && true", true.value)
+    }
+
+    @Test
     fun evaluationFailsForRebindingVariables() {
         assertTypeCheckFails("{ var x = 4; var x = 4 }")
     }

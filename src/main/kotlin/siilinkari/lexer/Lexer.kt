@@ -70,6 +70,8 @@ class Lexer(private val source: String, private val file: String = "<unknown>") 
             readIf('!')     -> if (readIf('=')) Operator.NotEqual else Operator.Not
             readIf('<')     -> if (readIf('=')) Operator.LessThanOrEqual else Operator.LessThan
             readIf('>')     -> if (readIf('=')) Operator.GreaterThanOrEqual else Operator.GreaterThan
+            readIf('&')     -> if (readIf('&')) Operator.And else fail("got '&', did you mean '&&'?")
+            readIf('|')     -> if (readIf('|')) Operator.Or else fail("got '|', did you mean '||'?")
             else            -> fail("unexpected character '$ch'")
         }
 

@@ -45,6 +45,8 @@ class LexerTest {
         assertTokens(">", Operator.GreaterThan)
         assertTokens("<=", Operator.LessThanOrEqual)
         assertTokens(">=", Operator.GreaterThanOrEqual)
+        assertTokens("&&", Operator.And)
+        assertTokens("||", Operator.Or)
     }
 
     @Test

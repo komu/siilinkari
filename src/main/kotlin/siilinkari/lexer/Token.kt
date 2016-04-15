@@ -67,6 +67,8 @@ sealed class Token {
         object GreaterThan : Operator(">")
         object LessThanOrEqual : Operator("<=")
         object GreaterThanOrEqual : Operator(">=")
+        object And : Operator("&&")
+        object Or : Operator("&&")
     }
 
     /**
