@@ -122,7 +122,7 @@ If you want to play around, here are some ideas to get started:
 
 ## Want more?
 
-If you want a taste of a bigger language, take a look at [Blunt](https://bitbucket.org/komu/blunt).
-It implements a large subset of ML/Haskell-like language (see e.g. [prelude.blunt](https://bitbucket.org/komu/blunt/src/f8a14979a743c4f06c85cffeee876111f2ac91ab/src/main/resources/prelude.blunt?at=master&fileviewer=file-view-default)
-and [river.blunt](https://bitbucket.org/komu/blunt/src/f8a14979a743c4f06c85cffeee876111f2ac91ab/src/main/resources/river.blunt?at=master&fileviewer=file-view-default)), but naturally the implementation is a lot
+If you want a taste of a bigger language, take a look at [Blunt](https://github.com/komu/blunt).
+It implements a large subset of ML/Haskell-like language (see e.g. [prelude.blunt](https://github.com/komu/blunt/blob/master/src/main/resources/prelude.blunt)
+and [river.blunt](https://github.com/komu/blunt/blob/master/src/main/resources/river.blunt)), but naturally the implementation is a lot
 more complex.
