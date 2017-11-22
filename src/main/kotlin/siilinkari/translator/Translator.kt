@@ -11,7 +11,7 @@ fun TypedExpression.translateToIR(): BasicBlockGraph {
     return translator.basicBlocks
 }
 
-class Translator() {
+class Translator {
 
     val basicBlocks = BasicBlockGraph()
     private var currentBlock = basicBlocks.start
@@ -105,7 +105,6 @@ class Translator() {
                 currentBlock = afterLoop
                 currentBlock += IR.PushUnit
             }
-            else -> error("unknown expression: $this")
         }
     }
 
@@ -119,7 +118,6 @@ class Translator() {
             is TypedExpression.Binary.Divide       -> currentBlock += IR.Divide
             is TypedExpression.Binary.ConcatString -> currentBlock += IR.ConcatString
             is TypedExpression.Binary.Relational   -> op.emitCode()
-            else                                   -> error("unknown expression: $this")
         }
     }
 
